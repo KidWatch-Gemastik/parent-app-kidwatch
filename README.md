@@ -14,23 +14,175 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+<!-- Supabase Path -->
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+https://ltarjljnzwrogwwdvtob.supabase.co
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## SQL Excute
 
-To learn more about Next.js, take a look at the following resources:
+```bash
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+-- 👶 TABLE: children
+create table children (
+    id uuid primary key default gen_random_uuid(),
+    parent_id uuid references auth.users not null,
+    name text not null,
+    date_of_birth date not null,
+    created_at timestamp default now()
+);
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+-- 📱 TABLE: devices
+create table devices (
+    id uuid primary key default gen_random_uuid(),
+    child_id uuid references children not null,
+    device_id text not null,
+    os text,
+    status text,
+    created_at timestamp default now()
+);
 
-## Deploy on Vercel
+-- 📝 TABLE: activity_logs
+create table activity_logs (
+    id uuid primary key default gen_random_uuid(),
+    child_id uuid references children not null,
+    timestamp timestamp default now(),
+    app_name text,
+    duration int
+);
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+-- 🔒 TABLE: rules
+create table rules (
+    id uuid primary key default gen_random_uuid(),
+    child_id uuid references children not null,
+    type text,
+    start_time time,
+    end_time time
+);
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-- 💡 TABLE: insights
+create table insights (
+    id uuid primary key default gen_random_uuid(),
+    child_id uuid references children not null,
+    type text,
+    message text,
+    created_at timestamp default now()
+);
+
+-- 💳 TABLE: subscriptions
+create table subscriptions (
+    id uuid primary key default gen_random_uuid(),
+    parent_id uuid references auth.users not null,
+    plan text default 'free',
+    trial_ends_at timestamp default (now() + interval '14 days'),
+    active boolean default true,
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+);
+
+-- 📆 TABLE: schedules
+create table schedules (
+    id uuid primary key default gen_random_uuid(),
+    child_id uuid references children not null,
+    day_of_week text not null,        -- e.g., 'monday', 'tuesday'
+    start_time time not null,
+    end_time time not null,
+    activity_type text not null,      -- e.g., 'study', 'play', 'blocked'
+    created_at timestamp default now()
+);
+
+--------------------------------------------------------------------------------
+-- ENABLE RLS
+--------------------------------------------------------------------------------
+alter table children enable row level security;
+alter table devices enable row level security;
+alter table activity_logs enable row level security;
+alter table rules enable row level security;
+alter table insights enable row level security;
+alter table subscriptions enable row level security;
+alter table schedules enable row level security;
+
+--------------------------------------------------------------------------------
+-- RLS POLICIES
+--------------------------------------------------------------------------------
+
+-- ✅ children
+create policy "Parent can access their children"
+on children
+for all
+using (parent_id = auth.uid());
+
+-- ✅ devices
+create policy "Parent can access their child's devices"
+on devices
+for all
+using (
+    child_id in (select id from children where parent_id = auth.uid())
+);
+
+-- ✅ activity_logs
+create policy "Parent can access their child's logs"
+on activity_logs
+for all
+using (
+    child_id in (select id from children where parent_id = auth.uid())
+);
+
+create policy "Child device can insert log"
+on activity_logs
+for insert
+with check (
+    child_id in (select id from children)
+);
+
+-- ✅ rules
+create policy "Parent can access their child's rules"
+on rules
+for all
+using (
+    child_id in (select id from children where parent_id = auth.uid())
+);
+
+-- ✅ insights
+create policy "Parent can access their child's insights"
+on insights
+for all
+using (
+    child_id in (select id from children where parent_id = auth.uid())
+);
+
+-- ✅ subscriptions
+create policy "Parent can access their subscription"
+on subscriptions
+for all
+using (
+    parent_id = auth.uid()
+);
+
+-- ✅ schedules
+create policy "Parent can access their child's schedules"
+on schedules
+for all
+using (
+    child_id in (select id from children where parent_id = auth.uid())
+);
+
+--------------------------------------------------------------------------------
+-- ENABLE REALTIME
+--------------------------------------------------------------------------------
+
+-- (aktifin via dashboard → Database → Replication → Tables)
+-- ✅ Tables recommended for realtime: 
+-- activity_logs, insights, rules (optional)
+
+--------------------------------------------------------------------------------
+-- SEED SUBSCRIPTION
+--------------------------------------------------------------------------------
+
+-- insert into subscriptions (parent_id, plan, trial_ends_at, active)
+-- values ('<PARENT-USER-ID>', 'free', now() + interval '14 days', true);
+
+
+```
