@@ -13,6 +13,7 @@ import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, UserP
 import Image from "next/image"
 import Link from "next/link"
 import { AuthError } from '@supabase/supabase-js'
+import { useSupabaseSessionError } from "@/hooks/useSupabaseSessionError"
 
 export default function RegisterPage() {
     const [name, setName] = useState("")
@@ -29,19 +30,29 @@ export default function RegisterPage() {
     const router = useRouter()
 
     useEffect(() => {
-        let interval: NodeJS.Timeout
-        if (countdown > 0) {
-            interval = setInterval(() => {
-                setCountdown((prev) => prev - 1)
-            }, 1000)
-        }
+        if (countdown <= 0) return
+
+        const interval = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(interval)
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
         return () => clearInterval(interval)
-    }, [countdown])
+    })
+
 
     const showAlert = (type: "success" | "error", message: string) => {
         setAlert({ type, message })
-        setTimeout(() => setAlert({ type: null, message: "" }), 5000)
+        setTimeout(() => setAlert({ type: null, message: "" }), 7000)
     }
+
+    useSupabaseSessionError(showAlert)
+
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60)

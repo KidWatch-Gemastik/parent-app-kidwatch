@@ -12,6 +12,7 @@ import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, Lock,
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useSupabaseSessionError } from "@/hooks/useSupabaseSessionError"
 
 export default function LoginPage() {
     const [emailOrPhone, setEmailOrPhone] = useState("")
@@ -24,19 +25,27 @@ export default function LoginPage() {
     }>({ type: null, message: "" })
 
     useEffect(() => {
-        let interval: NodeJS.Timeout
-        if (countdown > 0) {
-            interval = setInterval(() => {
-                setCountdown((prev) => prev - 1)
-            }, 1000)
-        }
+        if (countdown <= 0) return
+
+        const interval = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(interval)
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
         return () => clearInterval(interval)
-    }, [countdown])
+    })
 
     const showAlert = (type: "success" | "error", message: string) => {
         setAlert({ type, message })
-        setTimeout(() => setAlert({ type: null, message: "" }), 5000)
+        setTimeout(() => setAlert({ type: null, message: "" }), 7000)
     }
+
+    useSupabaseSessionError(showAlert)
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60)
@@ -89,7 +98,12 @@ export default function LoginPage() {
             }
 
             if (error) {
-                showAlert("error", error.message)
+                const msg = error?.message?.toLowerCase() || ""
+                if (msg.includes("expired") || msg.includes("kode otp telah kedaluwarsa")) {
+                    showAlert("error", "Kode OTP Anda telah kedaluwarsa. Silakan kirim ulang.")
+                } else {
+                    showAlert("error", error.message)
+                }
             } else {
                 showAlert(
                     "success",

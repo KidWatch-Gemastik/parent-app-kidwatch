@@ -8,16 +8,22 @@ export type Database = {
                     id: string
                     email: string
                     full_name: string
+                    created_at: string | null
+                    updated_at: string | null
                 }
                 Insert: {
                     id?: string
                     email: string
                     full_name: string
+                    created_at?: string | null
+                    updated_at?: string | null
                 }
                 Update: {
                     id?: string
                     email?: string
                     full_name?: string
+                    created_at?: string | null
+                    updated_at?: string | null
                 }
             }
         }
