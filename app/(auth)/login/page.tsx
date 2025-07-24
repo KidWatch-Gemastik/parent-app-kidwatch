@@ -1,14 +1,14 @@
 "use client"
 
 import { supabase } from "@/lib/supabase"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, Lock } from "lucide-react"
+import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, Lock, Clock } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -16,14 +16,32 @@ import Link from "next/link"
 export default function LoginPage() {
     const [emailOrPhone, setEmailOrPhone] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [countdown, setCountdown] = useState(0)
+    const [lastOtpSent, setLastOtpSent] = useState<string | null>(null)
     const [alert, setAlert] = useState<{
         type: "success" | "error" | null
         message: string
     }>({ type: null, message: "" })
 
+    useEffect(() => {
+        let interval: NodeJS.Timeout
+        if (countdown > 0) {
+            interval = setInterval(() => {
+                setCountdown((prev) => prev - 1)
+            }, 1000)
+        }
+        return () => clearInterval(interval)
+    }, [countdown])
+
     const showAlert = (type: "success" | "error", message: string) => {
         setAlert({ type, message })
         setTimeout(() => setAlert({ type: null, message: "" }), 5000)
+    }
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins}:${secs.toString().padStart(2, "0")}`
     }
 
     const handleLogin = async () => {
@@ -32,10 +50,17 @@ export default function LoginPage() {
             return
         }
 
+        const isEmail = emailOrPhone.includes("@")
+        const isPhone = !isEmail
+
+        if (isPhone && countdown > 0 && lastOtpSent === emailOrPhone) {
+            showAlert("error", `Tunggu ${formatTime(countdown)} sebelum mengirim OTP lagi`)
+            return
+        }
+
         setIsLoading(true)
         setAlert({ type: null, message: "" })
 
-        const isEmail = emailOrPhone.includes("@")
         try {
             let error
             if (isEmail) {
@@ -56,6 +81,11 @@ export default function LoginPage() {
                     },
                 })
                 error = phoneError
+
+                if (!phoneError) {
+                    setCountdown(60)
+                    setLastOtpSent(emailOrPhone)
+                }
             }
 
             if (error) {
@@ -87,9 +117,11 @@ export default function LoginPage() {
         }
     }
 
+    const isPhone = !emailOrPhone.includes("@") && emailOrPhone.trim() !== ""
+    const isCountdownActive = countdown > 0 && lastOtpSent === emailOrPhone && isPhone
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-emerald-950 relative overflow-hidden">
-            {/* Background Effects */}
             <div className="absolute inset-0">
                 <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-mint-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -136,6 +168,15 @@ export default function LoginPage() {
                                         </Alert>
                                     )}
 
+                                    {isCountdownActive && (
+                                        <Alert className="backdrop-blur-sm border-amber-500/50 bg-amber-950/30">
+                                            <Clock className="h-4 w-4 text-amber-400" />
+                                            <AlertDescription className="text-sm text-amber-400">
+                                                Tunggu {formatTime(countdown)} sebelum mengirim OTP lagi
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+
                                     <form
                                         className="space-y-5"
                                         onSubmit={(e) => {
@@ -175,17 +216,22 @@ export default function LoginPage() {
                                                 "hover:from-emerald-600 hover:to-mint-600 hover:shadow-emerald-500/25 hover:scale-[1.01]",
                                                 isLoading && "opacity-50 cursor-not-allowed"
                                             )}
-                                            disabled={isLoading}
+                                            disabled={isLoading || isCountdownActive}
                                         >
                                             {isLoading ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                     Mengirim...
                                                 </>
+                                            ) : isCountdownActive ? (
+                                                <>
+                                                    <Clock className="mr-2 h-4 w-4" />
+                                                    Tunggu {formatTime(countdown)}
+                                                </>
                                             ) : (
                                                 <>
                                                     <Lock className="mr-2 h-4 w-4" />
-                                                    Kirim Link Login
+                                                    {isPhone ? "Kirim OTP" : "Kirim Link Login"}
                                                 </>
                                             )}
                                         </Button>

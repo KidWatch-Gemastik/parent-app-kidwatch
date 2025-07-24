@@ -2,14 +2,14 @@
 
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, UserPlus, Eye, EyeOff } from "lucide-react"
+import { Shield, Mail, Phone, CheckCircle, AlertCircle, Loader2, Sparkles, UserPlus, Eye, EyeOff, Clock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { AuthError } from '@supabase/supabase-js'
@@ -20,15 +20,33 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [countdown, setCountdown] = useState(0)
+    const [lastOtpSent, setLastOtpSent] = useState<string | null>(null)
     const [alert, setAlert] = useState<{
         type: "success" | "error" | null
         message: string
     }>({ type: null, message: "" })
     const router = useRouter()
 
+    useEffect(() => {
+        let interval: NodeJS.Timeout
+        if (countdown > 0) {
+            interval = setInterval(() => {
+                setCountdown((prev) => prev - 1)
+            }, 1000)
+        }
+        return () => clearInterval(interval)
+    }, [countdown])
+
     const showAlert = (type: "success" | "error", message: string) => {
         setAlert({ type, message })
         setTimeout(() => setAlert({ type: null, message: "" }), 5000)
+    }
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins}:${secs.toString().padStart(2, "0")}`
     }
 
     const handleRegister = async () => {
@@ -41,10 +59,15 @@ export default function RegisterPage() {
             return
         }
 
+        const isPhone = emailOrPhone.startsWith("+") || /^[0-9]+$/.test(emailOrPhone)
+
+        if (isPhone && countdown > 0 && lastOtpSent === emailOrPhone) {
+            showAlert("error", `Tunggu ${formatTime(countdown)} sebelum mengirim OTP lagi`)
+            return
+        }
+
         setIsLoading(true)
         setAlert({ type: null, message: "" })
-
-        const isPhone = emailOrPhone.startsWith("+") || /^[0-9]+$/.test(emailOrPhone)
 
         try {
             if (isPhone) {
@@ -57,6 +80,10 @@ export default function RegisterPage() {
                     },
                 })
                 if (phoneError) throw phoneError
+
+
+                setCountdown(60) // 1 minute countdown
+                setLastOtpSent(emailOrPhone)
                 showAlert("success", "Kode OTP telah dikirim via WhatsApp!")
             } else {
                 if (!password.trim()) {
@@ -98,6 +125,7 @@ export default function RegisterPage() {
     }
 
     const isPhone = emailOrPhone.startsWith("+") || /^[0-9]+$/.test(emailOrPhone)
+    const isCountdownActive = countdown > 0 && lastOtpSent === emailOrPhone && isPhone
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-emerald-950 relative overflow-hidden">
@@ -146,6 +174,15 @@ export default function RegisterPage() {
                                                 <CheckCircle className="h-4 w-4" />
                                             )}
                                             <AlertDescription className="text-sm">{alert.message}</AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    {isCountdownActive && (
+                                        <Alert className="backdrop-blur-sm border-amber-500/50 bg-amber-950/30">
+                                            <Clock className="h-4 w-4 text-amber-400" />
+                                            <AlertDescription className="text-sm text-amber-400">
+                                                Tunggu {formatTime(countdown)} sebelum mengirim OTP lagi
+                                            </AlertDescription>
                                         </Alert>
                                     )}
 
@@ -229,19 +266,24 @@ export default function RegisterPage() {
                                             type="submit"
                                             variant={'ghost'}
                                             className="w-full h-11 text-sm bg-gradient-to-r from-emerald-500 to-emerald-500 hover:from-emerald-600 hover:to-mint-600 text-white font-semibold shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-[1.01]"
-                                            disabled={isLoading}
+                                            disabled={isLoading || isCountdownActive}
+
                                         >
                                             {isLoading ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                     Memproses...
                                                 </>
+                                            ) : isCountdownActive ? (
+                                                <>
+                                                    <Clock className="mr-2 h-4 w-4" />
+                                                    Tunggu {formatTime(countdown)}
+                                                </>
                                             ) : (
                                                 <>
                                                     <UserPlus className="mr-2 h-4 w-4" />
-                                                    Daftar Sekarang
-                                                </>
-                                            )}
+                                                    {isPhone ? "Kirim OTP" : "Daftar Sekarang"}
+                                                </>)}
                                         </Button>
                                     </form>
 
