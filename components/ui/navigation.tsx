@@ -126,11 +126,12 @@ export default function Navigation({
         {menuItems.map((item, index) => (
           <NavigationMenuItem key={index}>
             {item.isLink ? (
-              <Link href={item.href || ""} suppressHydrationWarning passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  {item.title}
-                </NavigationMenuLink>
-              </Link>
+              <NavigationMenuLink
+                href={item.href}
+                className={navigationMenuTriggerStyle()}
+              >
+                {item.title}
+              </NavigationMenuLink>
             ) : (
               <>
                 <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>

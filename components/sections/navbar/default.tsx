@@ -1,8 +1,10 @@
+"use client";
+
 import { Menu } from "lucide-react";
 import { ReactNode } from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-
 import LaunchUI from "../../logos/launch-ui";
 import { Button, type ButtonProps } from "../../ui/button";
 import {
@@ -12,12 +14,9 @@ import {
 } from "../../ui/navbar";
 import Navigation from "../../ui/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "../../ui/sheet";
-import Link from "next/link";
+import { ModeToggle } from "@/components/theme-toogle";
 
-interface NavbarLink {
-  text: string;
-  href: string;
-}
+import { guestLinks, authLinks, type NavbarLink } from "@/types/links";
 
 interface NavbarActionProps {
   text: string;
@@ -32,27 +31,22 @@ interface NavbarProps {
   logo?: ReactNode;
   name?: string;
   homeUrl?: string;
-  mobileLinks?: NavbarLink[];
   actions?: NavbarActionProps[];
   showNavigation?: boolean;
   customNavigation?: ReactNode;
   className?: string;
+  isAuthenticated?: boolean;
 }
 
 export default function Navbar({
   logo = <LaunchUI />,
   name = "Launch UI",
-  homeUrl = "https://www.launchuicomponents.com/",
-  mobileLinks = [
-    { text: "Getting Started", href: "https://www.launchuicomponents.com/" },
-    { text: "Components", href: "https://www.launchuicomponents.com/" },
-    { text: "Documentation", href: "https://www.launchuicomponents.com/" },
-  ],
+  homeUrl = "/",
   actions = [
-    { text: "Sign in", href: "https://www.launchuicomponents.com/", isButton: false },
+    { text: "Masuk", href: "/login", isButton: false },
     {
-      text: "Get Started",
-      href: "https://www.launchuicomponents.com/",
+      text: "Daftar",
+      href: "/register",
       isButton: true,
       variant: "default",
     },
@@ -60,7 +54,10 @@ export default function Navbar({
   showNavigation = true,
   customNavigation,
   className,
+  isAuthenticated = false,
 }: NavbarProps) {
+  const currentLinks: NavbarLink[] = isAuthenticated ? authLinks : guestLinks;
+
   return (
     <header className={cn("sticky top-0 z-50 -mb-4 px-4 pb-4", className)}>
       <div className="fade-bottom bg-background/15 absolute left-0 h-24 w-full backdrop-blur-lg"></div>
@@ -76,7 +73,10 @@ export default function Navbar({
             </Link>
             {showNavigation && (customNavigation || <Navigation />)}
           </NavbarLeft>
+
           <NavbarRight>
+            <ModeToggle />
+
             {actions.map((action, index) =>
               action.isButton ? (
                 <Button
@@ -98,8 +98,9 @@ export default function Navbar({
                 >
                   {action.text}
                 </Link>
-              ),
+              )
             )}
+
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -119,7 +120,7 @@ export default function Navbar({
                   >
                     <span>{name}</span>
                   </Link>
-                  {mobileLinks.map((link, index) => (
+                  {currentLinks.map((link, index) => (
                     <Link
                       key={index}
                       href={link.href}
