@@ -27,10 +27,25 @@ import {
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession"
 import { redirect } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useRouter } from "next/navigation";
+import Image from "next/image"
 
 export default function ParentDashboard() {
     const [selectedChild, setSelectedChild] = useState("emma")
     const { user, loading } = useSupabaseAuthSession()
+    const supabase = createClientComponentClient();
+    const router = useRouter();
+
+    const name = user?.user_metadata.full_name || user?.user_metadata.name;
+    const avatar = user?.user_metadata.avatar_url;
+
+    console.log('dashboard', name, avatar)
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/login");
+    };
 
     if (loading) {
         return (
@@ -192,12 +207,15 @@ export default function ParentDashboard() {
                                         className="flex items-center space-x-2 text-gray-300 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl"
                                     >
                                         <Avatar className="h-8 w-8 ring-2 ring-emerald-500/30">
-                                            <AvatarImage src="/placeholder.svg?height=32&width=32&text=P" />
-                                            <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white">
-                                                P
-                                            </AvatarFallback>
+                                            {avatar ? <Image src={avatar} width={100} alt={name} height={100} /> : (
+                                                <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white">
+                                                    {user?.email?.[0]?.toUpperCase() ?? "U"}
+                                                </AvatarFallback>
+                                            )}
+
+
                                         </Avatar>
-                                        <span>Parent</span>
+                                        <span>{name}</span>
                                         <ChevronDown className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -213,7 +231,7 @@ export default function ParentDashboard() {
                                         <Settings className="h-4 w-4 mr-2" />
                                         Settings
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="hover:bg-emerald-500/10 hover:text-emerald-400">
+                                    <DropdownMenuItem onClick={handleLogout} className="hover:bg-emerald-500/10 hover:text-emerald-400">
                                         <LogOut className="h-4 w-4 mr-2" />
                                         Logout
                                     </DropdownMenuItem>

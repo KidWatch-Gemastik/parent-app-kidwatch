@@ -65,15 +65,19 @@ export default function RegisterPage() {
             showAlert("error", "Mohon masukkan nama lengkap")
             return
         }
+
         if (!emailOrPhone.trim()) {
-            showAlert("error", "Mohon masukkan email atau nomor HP")
+            showAlert("error", "Mohon masukkan email")
             return
         }
 
-        const isPhone = emailOrPhone.startsWith("+") || /^[0-9]+$/.test(emailOrPhone)
+        if (!emailOrPhone.includes("@")) {
+            showAlert("error", "Format email tidak valid")
+            return
+        }
 
-        if (isPhone && countdown > 0 && lastOtpSent === emailOrPhone) {
-            showAlert("error", `Tunggu ${formatTime(countdown)} sebelum mengirim OTP lagi`)
+        if (!password.trim()) {
+            showAlert("error", "Mohon masukkan password")
             return
         }
 
@@ -81,38 +85,19 @@ export default function RegisterPage() {
         setAlert({ type: null, message: "" })
 
         try {
-            if (isPhone) {
-                const { error: phoneError } = await supabase.auth.signInWithOtp({
-                    phone: emailOrPhone,
-                    options: {
-                        shouldCreateUser: true,
-                        data: { full_name: name },
-                        channel: "whatsapp",
-                    },
-                })
-                if (phoneError) throw phoneError
+            const { error } = await supabase.auth.signUp({
+                email: emailOrPhone,
+                password,
+                options: {
+                    data: { full_name: name },
+                    emailRedirectTo: `${location.origin}/auth/callback`,
+                },
+            })
 
+            if (error) throw error
 
-                setCountdown(60) // 1 minute countdown
-                setLastOtpSent(emailOrPhone)
-                showAlert("success", "Kode OTP telah dikirim via WhatsApp!")
-            } else {
-                if (!password.trim()) {
-                    showAlert("error", "Mohon masukkan password")
-                    return
-                }
-                const { error } = await supabase.auth.signUp({
-                    email: emailOrPhone,
-                    password,
-                    options: {
-                        data: { full_name: name },
-                        emailRedirectTo: `${location.origin}/auth/callback`,
-                    },
-                })
-                if (error) throw error
-                showAlert("success", "Silakan cek email Anda untuk konfirmasi akun!")
-                setTimeout(() => router.push("/login"), 2000)
-            }
+            showAlert("success", "Silakan cek email Anda untuk konfirmasi akun!")
+            setTimeout(() => router.push("/login"), 2000)
         } catch (err) {
             const error = err as AuthError
             showAlert("error", error?.message || "Terjadi kesalahan saat mendaftar")
@@ -120,6 +105,7 @@ export default function RegisterPage() {
             setIsLoading(false)
         }
     }
+
 
     const handleOAuth = async (provider: "google" | "facebook") => {
         try {
@@ -220,12 +206,12 @@ export default function RegisterPage() {
 
                                         <div className="space-y-2">
                                             <Label htmlFor="emailOrPhone" className="text-gray-200 text-sm font-medium">
-                                                Email atau Nomor HP
+                                                Email
                                             </Label>
                                             <div className="relative group">
                                                 <Input
                                                     id="emailOrPhone"
-                                                    placeholder="nama@email.com atau +628123456789"
+                                                    placeholder="nama@email.com"
                                                     value={emailOrPhone}
                                                     onChange={(e) => setEmailOrPhone(e.target.value)}
                                                     className="pl-10 h-11 text-sm border-gray-700 bg-gray-800/50 focus:border-emerald-500 focus:ring-emerald-500/30 focus:ring-1 text-white placeholder:text-gray-400 transition-all duration-300"
@@ -235,7 +221,7 @@ export default function RegisterPage() {
                                                     {emailOrPhone.includes("@") ? (
                                                         <Mail className="h-4 w-4 text-gray-400" />
                                                     ) : (
-                                                        <Phone className="h-4 w-4 text-gray-400" />
+                                                        <Mail className="h-4 w-4 text-gray-400" />
                                                     )}
                                                 </div>
                                             </div>

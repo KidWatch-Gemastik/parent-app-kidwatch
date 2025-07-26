@@ -3,10 +3,11 @@
 import { Menu } from "lucide-react";
 import { ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import LaunchUI from "../../logos/launch-ui";
-import { Button, type ButtonProps } from "../../ui/button";
+import { Button } from "../../ui/button";
 import {
   Navbar as NavbarComponent,
   NavbarLeft,
@@ -17,50 +18,53 @@ import { Sheet, SheetContent, SheetTrigger } from "../../ui/sheet";
 import { ModeToggle } from "@/components/theme-toogle";
 
 import { guestLinks, authLinks, type NavbarLink } from "@/types/links";
-
-interface NavbarActionProps {
-  text: string;
-  href: string;
-  variant?: ButtonProps["variant"];
-  icon?: ReactNode;
-  iconRight?: ReactNode;
-  isButton?: boolean;
-}
+import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "../../ui/avatar";
+import Image from "next/image";
 
 interface NavbarProps {
   logo?: ReactNode;
   name?: string;
   homeUrl?: string;
-  actions?: NavbarActionProps[];
   showNavigation?: boolean;
   customNavigation?: ReactNode;
   className?: string;
-  isAuthenticated?: boolean;
 }
 
 export default function Navbar({
   logo = <LaunchUI />,
   name = "Launch UI",
   homeUrl = "/",
-  actions = [
-    { text: "Masuk", href: "/login", isButton: false },
-    {
-      text: "Daftar",
-      href: "/register",
-      isButton: true,
-      variant: "default",
-    },
-  ],
   showNavigation = true,
   customNavigation,
   className,
-  isAuthenticated = false,
 }: NavbarProps) {
-  const currentLinks: NavbarLink[] = isAuthenticated ? authLinks : guestLinks;
+  const { session, provider } = useSupabaseAuthSession();
+  const user = session?.user;
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+
+  const currentLinks: NavbarLink[] = user ? authLinks : guestLinks;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  // const nameUser = user?.user_metadata.full_name || user?.user_metadata.name;
+  const avatar = user?.user_metadata?.avatar_url;
+  console.log(avatar, provider)
 
   return (
     <header className={cn("sticky top-0 z-50 -mb-4 px-4 pb-4", className)}>
-      <div className="fade-bottom bg-background/15 absolute left-0 h-24 w-full backdrop-blur-lg"></div>
+      <div className="fade-bottom bg-background/15 absolute left-0 h-24 w-full backdrop-blur-lg" />
       <div className="max-w-container relative mx-auto">
         <NavbarComponent>
           <NavbarLeft>
@@ -77,28 +81,39 @@ export default function Navbar({
           <NavbarRight>
             <ModeToggle />
 
-            {actions.map((action, index) =>
-              action.isButton ? (
-                <Button
-                  key={index}
-                  variant={action.variant || "default"}
-                  asChild
-                >
-                  <Link href={action.href}>
-                    {action.icon}
-                    {action.text}
-                    {action.iconRight}
-                  </Link>
-                </Button>
-              ) : (
-                <Link
-                  key={index}
-                  href={action.href}
-                  className="hidden text-sm md:block"
-                >
-                  {action.text}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="cursor-pointer">
+                    <Avatar className="h-8 w-8 ring-2 ring-emerald-500/30">
+                      {avatar ? <Image src={avatar} width={100} alt={name} height={100} /> : (
+                        <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white">
+                          {user?.email?.[0]?.toUpperCase() ?? "U"}
+                        </AvatarFallback>
+                      )}
+
+                    </Avatar>
+                    <span>{name}</span>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link href="/login" className="hidden text-sm md:block">
+                  Masuk
                 </Link>
-              )
+                <Button variant="default" asChild>
+                  <Link href="/register">Daftar</Link>
+                </Button>
+              </>
             )}
 
             <Sheet>

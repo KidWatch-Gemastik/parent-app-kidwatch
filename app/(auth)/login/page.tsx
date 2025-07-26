@@ -55,15 +55,13 @@ export default function LoginPage() {
 
     const handleLogin = async () => {
         if (!emailOrPhone.trim()) {
-            showAlert("error", "Mohon masukkan email atau nomor HP")
+            showAlert("error", "Mohon masukkan email Anda")
             return
         }
 
         const isEmail = emailOrPhone.includes("@")
-        const isPhone = !isEmail
-
-        if (isPhone && countdown > 0 && lastOtpSent === emailOrPhone) {
-            showAlert("error", `Tunggu ${formatTime(countdown)} sebelum mengirim OTP lagi`)
+        if (!isEmail) {
+            showAlert("error", "Format email tidak valid")
             return
         }
 
@@ -71,44 +69,23 @@ export default function LoginPage() {
         setAlert({ type: null, message: "" })
 
         try {
-            let error
-            if (isEmail) {
-                const { error: emailError } = await supabase.auth.signInWithOtp({
-                    email: emailOrPhone,
-                    options: {
-                        shouldCreateUser: true,
-                        emailRedirectTo: `${location.origin}/auth/callback`,
-                    },
-                })
-                error = emailError
-            } else {
-                const { error: phoneError } = await supabase.auth.signInWithOtp({
-                    phone: emailOrPhone,
-                    options: {
-                        shouldCreateUser: true,
-                        channel: "whatsapp",
-                    },
-                })
-                error = phoneError
-
-                if (!phoneError) {
-                    setCountdown(60)
-                    setLastOtpSent(emailOrPhone)
-                }
-            }
+            const { error } = await supabase.auth.signInWithOtp({
+                email: emailOrPhone,
+                options: {
+                    shouldCreateUser: true,
+                    emailRedirectTo: `${location.origin}/auth/callback`,
+                },
+            })
 
             if (error) {
                 const msg = error?.message?.toLowerCase() || ""
                 if (msg.includes("expired") || msg.includes("kode otp telah kedaluwarsa")) {
-                    showAlert("error", "Kode OTP Anda telah kedaluwarsa. Silakan kirim ulang.")
+                    showAlert("error", "Link login telah kedaluwarsa. Silakan kirim ulang.")
                 } else {
                     showAlert("error", error.message)
                 }
             } else {
-                showAlert(
-                    "success",
-                    isEmail ? "Link login telah dikirim ke email Anda." : "Kode OTP telah dikirim ke nomor HP Anda.",
-                )
+                showAlert("success", "Link login telah dikirim ke email Anda.")
             }
         } catch {
             showAlert("error", "Terjadi kesalahan. Silakan coba lagi.")
@@ -116,6 +93,7 @@ export default function LoginPage() {
             setIsLoading(false)
         }
     }
+
 
     const handleOAuth = async (provider: "google" | "facebook") => {
         try {
@@ -166,7 +144,7 @@ export default function LoginPage() {
                                 <CardHeader className="space-y-1 pb-6 relative">
                                     <CardTitle className="text-xl font-bold text-center text-white">Masuk ke Akun Anda</CardTitle>
                                     <CardDescription className="text-center text-gray-300 text-sm font-light">
-                                        Masukkan email atau nomor HP untuk melanjutkan
+                                        Masukkan email untuk melanjutkan
                                     </CardDescription>
                                 </CardHeader>
 
@@ -200,12 +178,12 @@ export default function LoginPage() {
                                     >
                                         <div className="space-y-2">
                                             <Label htmlFor="emailOrPhone" className="text-gray-200 text-sm font-medium">
-                                                Email atau Nomor HP
+                                                Email
                                             </Label>
                                             <div className="relative group">
                                                 <Input
                                                     id="emailOrPhone"
-                                                    placeholder="nama@email.com atau 08123456789"
+                                                    placeholder="nama@email.com"
                                                     value={emailOrPhone}
                                                     onChange={(e) => setEmailOrPhone(e.target.value)}
                                                     className="pl-10 h-11 text-sm border-gray-700 bg-gray-800/50 focus:border-emerald-500 focus:ring-emerald-500/30 focus:ring-1 text-white placeholder:text-gray-400 transition-all duration-300"
@@ -215,7 +193,7 @@ export default function LoginPage() {
                                                     {emailOrPhone.includes("@") ? (
                                                         <Mail className="h-4 w-4 text-gray-400" />
                                                     ) : (
-                                                        <Phone className="h-4 w-4 text-gray-400" />
+                                                        <Mail className="h-4 w-4 text-gray-400" />
                                                     )}
                                                 </div>
                                             </div>
