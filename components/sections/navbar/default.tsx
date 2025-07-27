@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
 import { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,10 +24,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import Image from "next/image";
+import { DashboardIcon } from "@radix-ui/react-icons";
 
 interface NavbarProps {
   logo?: ReactNode;
@@ -96,12 +99,14 @@ export default function Navbar({
                     <span>{name}</span>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                    Dashboard
+                    <DashboardIcon className="h-4 w-4" /> Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Logout
+                  <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
