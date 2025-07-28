@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AlertTriangle, Trash2 } from "lucide-react"
-import type { Child } from "../page"
+import { Child } from "@/types"
+import { getAgeFromDate } from "@/lib/function"
 
 interface DeleteChildModalProps {
     isOpen: boolean
@@ -48,7 +49,7 @@ export function DeleteChildModal({ isOpen, onClose, child, onDelete }: DeleteChi
                         <div>
                             <h3 className="font-bold text-white">{child.name}</h3>
                             <p className="text-sm text-gray-400">
-                                {child.age} tahun • {child.gender}
+                                {getAgeFromDate(child.date_of_birth)} tahun • {child.sex}
                             </p>
                         </div>
                     </div>
@@ -77,6 +78,7 @@ export function DeleteChildModal({ isOpen, onClose, child, onDelete }: DeleteChi
                         Batal
                     </Button>
                     <Button
+                        variant='ghost'
                         onClick={handleDelete}
                         className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600 rounded-xl shadow-lg hover:shadow-red-500/25"
                     >

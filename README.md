@@ -20,6 +20,7 @@ bun dev
 https://ltarjljnzwrogwwdvtob.supabase.co
 ```
 
+npx shadcn@latest add button
 
 ## SQL Excute
 
