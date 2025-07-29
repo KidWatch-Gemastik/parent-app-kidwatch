@@ -4,10 +4,13 @@ import type { Child } from "@/types"
 
 export function useChildren(userId: string | null) {
     const [children, setChildren] = useState<Child[]>([])
-    const [loading, setLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        if (!userId) return
+        if (!userId) {
+            setIsLoading(false)
+            return
+        }
 
         const fetchChildren = async () => {
             const { data, error } = await supabase
@@ -15,14 +18,14 @@ export function useChildren(userId: string | null) {
                 .select("*")
                 .eq("parent_id", userId)
 
-            if (!error) {
-                setChildren(data || [])
+            if (!error && data) {
+                setChildren(data)
             }
-            setLoading(false)
+            setIsLoading(false)
         }
 
         fetchChildren()
     }, [userId])
 
-    return { children, loading }
+    return { children, isLoading }
 }
