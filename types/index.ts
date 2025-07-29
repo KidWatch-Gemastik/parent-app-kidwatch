@@ -22,9 +22,11 @@ export type LocationData = {
 
 export type SafeZone = {
     id: string
+    child_id: string
     name: string
     latitude: number
     longitude: number
     radius: number // in meters
-    type: "home" | "school" | "custom"
+    created_at: string // ISO string for timestamp
+    child_name?: string // To display child's name in UI
 }
