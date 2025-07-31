@@ -9,17 +9,27 @@ export function useSupabaseAuthSession() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-            setSession(newSession)
-            setLoading(false)
-        })
+        let unsubscribed = false
 
-        supabase.auth.getSession().then(({ data }) => {
-            setSession(data.session)
-            setLoading(false)
+        const initSession = async () => {
+            const { data } = await supabase.auth.getSession()
+            if (!unsubscribed) {
+                setSession(data.session)
+                setLoading(false)
+            }
+        }
+
+        initSession()
+
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+            if (!unsubscribed) {
+                setSession(newSession)
+                setLoading(false)
+            }
         })
 
         return () => {
+            unsubscribed = true
             listener.subscription.unsubscribe()
         }
     }, [])

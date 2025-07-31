@@ -8,7 +8,6 @@ import {
     CalendarDays,
     BarChart3,
     Bell,
-    LogOut,
     Menu,
     ChevronLeft,
     ChevronRight,
@@ -26,17 +25,29 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-export const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { label: "Anak", icon: Users, href: "/perangkat" },
-    { label: "Location", icon: MapPin, href: "/location" },
-    { label: "Logs", icon: PhoneCall, href: "/logs" },
-    { label: "Safe Zones", icon: ShieldCheck, href: "/safe-zones" },
-    { label: "Schedule", icon: CalendarDays, href: "/schedule" },
-    { label: "Stats", icon: BarChart3, href: "/stats" },
-    { label: "Notifications", icon: Bell, href: "/notifications" },
-    { label: "AI Assistant", icon: Bot, href: "/ai-assistant" },
+export const navGroups = [
+    {
+        title: "Main",
+        items: [
+            { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+            { label: "Stats", icon: BarChart3, href: "/dashboard/stats" },
+            { label: "Notifications", icon: Bell, href: "/dashboard/notifications" },
+            { label: "AI Assistant", icon: Bot, href: "/dashboard/ai-assistant" },
+        ],
+    },
+    {
+        title: "Monitoring Anak",
+        items: [
+            { label: "Anak", icon: Users, href: "/dashboard/perangkat" },
+            { label: "Location", icon: MapPin, href: "/dashboard/location" },
+            { label: "Logs", icon: PhoneCall, href: "/dashboard/logs" },
+            { label: "Safe Zones", icon: ShieldCheck, href: "/dashboard/safe-zones" },
+            { label: "Schedule", icon: CalendarDays, href: "/dashboard/schedule" },
+            { label: "Chat dengan Anak", icon: Sparkles, href: "/dashboard/chat" },
+        ],
+    },
 ]
+
 
 export default function DashboardSidebar() {
     // const supabase = createClientComponentClient()
@@ -85,62 +96,61 @@ export default function DashboardSidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 space-y-2 relative z-10">
-                    {navItems.map(({ label, icon: Icon, href }) => {
-                        const isActive = pathname === href
+                <nav className="flex-1 space-y-6 relative z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-500/20 hover:scrollbar-thumb-emerald-500/40">
+                    {navGroups.map((group) => (
+                        <div key={group.title}>
+                            {!collapsed && (
+                                <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                    {group.title}
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                {group.items.map(({ label, icon: Icon, href }) => {
+                                    const isActive = pathname === href
 
-                        const buttonContent = (
-                            <Link key={label} href={href} className="block">
-                                <Button
-                                    variant="ghost"
-                                    className={cn(
-                                        "w-full transition-all duration-300 rounded-xl group relative overflow-hidden",
-                                        collapsed ? "justify-center px-3 h-12" : "justify-start gap-3 h-12 px-4",
-                                        isActive
-                                            ? "bg-gradient-to-r from-emerald-500/20 to-mint-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10"
-                                            : "text-gray-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 border border-transparent",
-                                    )}
-                                >
-                                    {/* Active indicator */}
-                                    {isActive && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-mint-400 rounded-r-full" />
-                                    )}
+                                    const buttonContent = (
+                                        <Link key={label} href={href} className="block">
+                                            <Button
+                                                variant="ghost"
+                                                className={cn(
+                                                    "w-full transition-all duration-300 rounded-xl group relative overflow-hidden",
+                                                    collapsed ? "justify-center px-3 h-12" : "justify-start gap-3 h-12 px-4",
+                                                    isActive
+                                                        ? "bg-gradient-to-r from-emerald-500/20 to-mint-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10"
+                                                        : "text-gray-300 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 border border-transparent",
+                                                )}
+                                            >
+                                                {isActive && (
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-mint-400 rounded-r-full" />
+                                                )}
+                                                <Icon className="w-5 h-5 relative z-10 transition-all duration-300 group-hover:scale-110" />
+                                                {!collapsed && <span className="relative z-10 font-medium">{label}</span>}
+                                                {isActive && !collapsed && (
+                                                    <div className="absolute right-3 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                                )}
+                                            </Button>
+                                        </Link>
+                                    )
 
-                                    {/* Hover effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-mint-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                                    <Icon
-                                        className={cn(
-                                            "w-5 h-5 relative z-10 transition-all duration-300",
-                                            isActive && "text-emerald-400",
-                                            "group-hover:scale-110",
-                                        )}
-                                    />
-                                    {!collapsed && <span className="relative z-10 font-medium transition-all duration-300">{label}</span>}
-
-                                    {/* Active glow effect */}
-                                    {isActive && !collapsed && (
-                                        <div className="absolute right-3 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    )}
-                                </Button>
-                            </Link>
-                        )
-
-                        return collapsed ? (
-                            <Tooltip key={label}>
-                                <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
-                                <TooltipContent
-                                    side="right"
-                                    className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-emerald-400"
-                                >
-                                    {label}
-                                </TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            buttonContent
-                        )
-                    })}
+                                    return collapsed ? (
+                                        <Tooltip key={label}>
+                                            <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+                                            <TooltipContent
+                                                side="right"
+                                                className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-emerald-400"
+                                            >
+                                                {label}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    ) : (
+                                        buttonContent
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
+
 
                 {/* Separator */}
                 <div className="my-6 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
