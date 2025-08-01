@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 // import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { supabase } from "@/lib/supabase";
+// import { supabase } from "@/lib/supabase";
+import { useSupabase } from "@/providers/SupabaseProvider";
+
 
 interface ChatEntry {
     role: "user" | "ai";
@@ -34,6 +36,7 @@ export default function AIAssistant() {
     const [loading, setLoading] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const [collapsed, setCollapsed] = useState<{ [date: string]: boolean }>({});
+    const supabase = useSupabase();
 
     const fetchChatHistory = async () => {
         const { data, error } = await supabase

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useChatMessages } from "@/hooks/useChatMessages"
-import { supabase } from "@/lib/supabase"
+// import { supabase } from "@/lib/supabase"
+import { useSupabase } from "@/providers/SupabaseProvider"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -27,6 +28,7 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline }: 
     const [isRecording, setIsRecording] = useState(false)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<BlobPart[]>([])
+    const supabase = useSupabase();
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
