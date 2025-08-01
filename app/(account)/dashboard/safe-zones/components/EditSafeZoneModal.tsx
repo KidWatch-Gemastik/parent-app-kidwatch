@@ -14,10 +14,10 @@ import { Label } from "@/components/ui/label"
 import { Sparkles, Pencil, Loader2 } from "lucide-react"
 import type { Child, SafeZone } from "@/types"
 import { updateSafeZone } from "@/lib/actions/safeZones"
-const MapPicker = dynamic(async () => {
-    const mod = await import("@/components/map-picker");
-    return mod.MapPicker;
-}, { ssr: false });
+const MapPicker = dynamic(
+    () => import("@/components/map-picker").then(mod => mod.MapPicker),
+    { ssr: false }
+)
 import { ChildSelect } from "./childSelect"
 import dynamic from "next/dynamic"
 

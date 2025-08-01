@@ -12,10 +12,10 @@ import { addSafeZone } from "@/lib/actions/safeZones"
 // import { MapPicker } from "@/components/map-picker"
 import dynamic from "next/dynamic";
 
-const MapPicker = dynamic(async () => {
-    const mod = await import("@/components/map-picker");
-    return mod.MapPicker;
-}, { ssr: false });
+const MapPicker = dynamic(
+    () => import("@/components/map-picker").then(mod => mod.MapPicker),
+    { ssr: false }
+)
 import 'leaflet/dist/leaflet.css';
 import { ChildSelect } from "./childSelect"
 
