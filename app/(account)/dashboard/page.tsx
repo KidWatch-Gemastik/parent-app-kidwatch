@@ -36,8 +36,13 @@ export default function DashboardPage() {
     const router = useRouter()
     const { user, loading: loadingUser } = useSupabaseAuthSession()
     const { children: fetchedChildren, isLoading: loadingChildren } = useChildren(user?.id || null)
-
     const [selectedChild, setSelectedChild] = useState<Child | null>(null)
+
+    useEffect(() => {
+        if (!loadingUser && !user) {
+            router.replace("/login")
+        }
+    }, [loadingUser, user, router])
 
     useEffect(() => {
         if (!loadingChildren && fetchedChildren.length > 0 && !selectedChild) {
@@ -45,7 +50,7 @@ export default function DashboardPage() {
         }
     }, [fetchedChildren, loadingChildren, selectedChild])
 
-    if (loadingUser || loadingChildren) {
+    if (loadingUser || loadingChildren || !user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
                 <div className="text-center">
@@ -56,10 +61,6 @@ export default function DashboardPage() {
                 </div>
             </div>
         )
-    }
-
-    if (!user) {
-        return redirect("/login")
     }
 
     const currentChild = selectedChild || fetchedChildren[0]
