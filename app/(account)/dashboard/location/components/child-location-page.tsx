@@ -206,9 +206,9 @@ export function ChildLocationPage({ initialChildren, userId, isLoading }: Props)
                             </CardHeader>
                             <CardContent>
                                 <div className="aspect-video bg-gray-800/60 backdrop-blur-sm rounded-xl flex items-center justify-center border border-gray-700/50 relative overflow-hidden">
-                                    {selectedChild.location ? (
+                                    {typeof window !== "undefined" && selectedChild.location ? (
                                         <iframe
-                                            src={`https://www.google.com/maps?q=${selectedChild.location}&output=embed`}
+                                            src={`https://www.google.com/maps?q=${encodeURIComponent(selectedChild.location)}&output=embed`}
                                             className="absolute inset-0 w-full h-full object-cover opacity-90 rounded-xl"
                                             loading="lazy"
                                             title={`Map of ${selectedChild.name}`}
@@ -224,7 +224,6 @@ export function ChildLocationPage({ initialChildren, userId, isLoading }: Props)
                                             </p>
                                         </div>
                                     )}
-
                                 </div>
                                 <div className="mt-4 flex items-center justify-between text-sm bg-gray-800/40 rounded-lg p-3">
                                     <span className="text-gray-400">Terakhir diperbarui:</span>
