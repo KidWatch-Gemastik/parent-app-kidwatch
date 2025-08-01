@@ -9,7 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Plus, Sparkles, Loader2 } from "lucide-react"
 import type { Child } from "@/types"
 import { addSafeZone } from "@/lib/actions/safeZones"
-import { MapPicker } from "@/components/map-picker"
+// import { MapPicker } from "@/components/map-picker"
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(async () => {
+    const mod = await import("@/components/map-picker");
+    return mod.MapPicker;
+}, { ssr: false });
 import 'leaflet/dist/leaflet.css';
 import { ChildSelect } from "./childSelect"
 

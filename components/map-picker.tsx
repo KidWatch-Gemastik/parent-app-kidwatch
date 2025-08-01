@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Ruler } from "lucide-react"
 import L from "leaflet"
 
+
 interface MapPickerProps {
     onSelectLocation: (lat: number, lng: number, radius: number) => void
     initialLatitude?: number
