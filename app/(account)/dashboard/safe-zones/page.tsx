@@ -1,17 +1,15 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { supabaseAuth } from "@/lib/supabase-auth"
 import DashboardSidebar from "@/components/layouts/dashboardSidebar"
 import DashboardHeader from "@/components/layouts/DashboardHeader"
 import { fetchChildrenForSafeZones, fetchSafeZones } from "@/lib/actions/safeZones"
 import { SafeZonesPageClient } from "./components/client"
 
 export default async function SafeZonesPage() {
-    const supabase = createServerComponentClient({ cookies })
     const {
         data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabaseAuth.auth.getSession()
 
     if (!session) {
         redirect("/login")

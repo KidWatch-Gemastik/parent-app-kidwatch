@@ -8,59 +8,43 @@ import { cn } from "@/lib/utils"
 export default function AuthCallbackPage() {
     const [status, setStatus] = React.useState<"processing" | "success" | "error">("processing")
     const [message, setMessage] = React.useState("Memproses login...")
-    const executedRef = React.useRef(false)
 
     React.useEffect(() => {
-        if (executedRef.current) return
-        executedRef.current = true
-
         const handleAuthCallback = async () => {
-            const hash = window.location.hash.substring(1)
-            const params = new URLSearchParams(hash)
-            const access_token = params.get("access_token")
-            const refresh_token = params.get("refresh_token")
+            try {
+                const hash = window.location.hash.substring(1)
+                const params = new URLSearchParams(hash)
+                const access_token = params.get("access_token")
+                const refresh_token = params.get("refresh_token")
 
-            // Bersihkan hash dari URL agar tidak muncul di history
-            window.history.replaceState(null, "", window.location.pathname)
+                // Bersihkan hash dari URL agar tidak tampil di history
+                window.history.replaceState(null, "", window.location.pathname)
 
-            // Jika token tidak ada
-            if (!access_token || !refresh_token) {
+                // Validasi token
+                if (!access_token || !refresh_token) {
+                    setStatus("error")
+                    setMessage("Token tidak valid. Mengarahkan...")
+                    setTimeout(() => window.location.replace("/login?error=invalid_or_expired"), 2000)
+                    return
+                }
+
+                setMessage("Mengatur sesi...")
+                const { error } = await supabaseAuth.auth.setSession({ access_token, refresh_token })
+                if (error) throw error
+
+                const { data } = await supabaseAuth.auth.getSession()
+                if (!data.session) throw new Error("Session gagal dibuat")
+
+                // Success
+                setStatus("success")
+                setMessage("Berhasil masuk! Mengarahkan...")
+                setTimeout(() => window.location.replace("/dashboard"), 1500)
+            } catch (err) {
+                console.error("Auth Callback Error:", err)
                 setStatus("error")
-                setMessage("Token tidak valid. Mengarahkan...")
-                setTimeout(() => {
-                    window.location.href = "/login?error=invalid_or_expired"
-                }, 2000)
-                return
+                setMessage("Terjadi kesalahan. Mengarahkan...")
+                setTimeout(() => window.location.replace("/login?error=session_failed"), 2000)
             }
-
-            setMessage("Mengatur sesi...")
-
-            const { error } = await supabaseAuth.auth.setSession({ access_token, refresh_token })
-            if (error) {
-                console.error("Failed to set session", error)
-                setStatus("error")
-                setMessage("Gagal masuk. Mencoba lagi...")
-                setTimeout(() => {
-                    window.location.href = "/login?error=invalid_or_expired"
-                }, 2000)
-                return
-            }
-
-            const { data } = await supabaseAuth.auth.getSession()
-            if (!data.session) {
-                setStatus("error")
-                setMessage("Sesi gagal dibuat. Mengarahkan...")
-                setTimeout(() => {
-                    window.location.href = "/login?error=session_failed"
-                }, 2000)
-                return
-            }
-
-            setStatus("success")
-            setMessage("Berhasil masuk! Mengarahkan...")
-            setTimeout(() => {
-                window.location.href = "/dashboard"
-            }, 1500)
         }
 
         handleAuthCallback()

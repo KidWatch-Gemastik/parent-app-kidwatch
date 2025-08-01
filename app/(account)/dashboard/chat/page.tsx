@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabaseAuth } from "@/lib/supabase-auth"
 import { useChatOverview } from "@/hooks/useChatOverview"
 import ChatWindow from "./components/ChatWindow"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,7 +20,7 @@ export default function ChatPage() {
     const [search, setSearch] = useState("")
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
+        supabaseAuth.auth.getUser().then(({ data }) => {
             setParentId(data.user?.id ?? null)
         })
     }, [])

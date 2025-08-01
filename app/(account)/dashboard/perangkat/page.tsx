@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { supabaseAuth } from "@/lib/supabase-auth"
 import { supabase } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
 import { Plus, Users, Sparkles } from "lucide-react"
@@ -38,7 +39,7 @@ export default function ChildPage() {
         initRef.current = true
 
         const init = async () => {
-            const { data: { session: s } } = await supabase.auth.getSession()
+            const { data: { session: s } } = await supabaseAuth.auth.getSession()
             if (!s) {
                 router.replace("/login")
                 return
