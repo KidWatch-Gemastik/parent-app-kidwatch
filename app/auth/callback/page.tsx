@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { supabaseAuth } from "@/lib/supabase-auth"
 import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,7 +21,7 @@ export default function AuthCallbackPage() {
 
             setMessage("Mengatur sesi...")
 
-            supabase.auth
+            supabaseAuth.auth
                 .setSession({
                     access_token,
                     refresh_token,
