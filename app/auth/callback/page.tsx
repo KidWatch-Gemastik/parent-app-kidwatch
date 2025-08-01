@@ -2,25 +2,25 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useSupabase } from "@/providers/SupabaseProvider"
 
 export default function AuthCallbackPage() {
-    const router = useRouter()
-    const [status, setStatus] = useState<"processing" | "success" | "error">("processing")
-    const [message, setMessage] = useState("Memproses login...")
+    const router = useRouter();
+    const supabase = useSupabase();
+    const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
+    const [message, setMessage] = useState("Memproses login...");
 
     useEffect(() => {
-        const hash = window.location.hash.substring(1)
-        const params = new URLSearchParams(hash)
-        const access_token = params.get("access_token")
-        const refresh_token = params.get("refresh_token")
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token");
 
         if (access_token && refresh_token) {
-            const supabase = createClientComponentClient()
-
-            setMessage("Mengatur sesi...")
+            setMessage("Mengatur sesi...");
 
             supabase.auth
                 .setSession({
@@ -29,28 +29,28 @@ export default function AuthCallbackPage() {
                 })
                 .then(({ error }) => {
                     if (error) {
-                        console.error("Failed to set session", error)
-                        setStatus("error")
-                        setMessage("Gagal masuk. Mencoba lagi...")
+                        console.error("Failed to set session", error);
+                        setStatus("error");
+                        setMessage("Gagal masuk. Mencoba lagi...");
                         setTimeout(() => {
-                            router.replace("/login?error=invalid_or_expired")
-                        }, 2000)
+                            router.replace("/login?error=invalid_or_expired");
+                        }, 2000);
                     } else {
-                        setStatus("success")
-                        setMessage("Berhasil masuk! Mengarahkan...")
+                        setStatus("success");
+                        setMessage("Berhasil masuk! Mengarahkan...");
                         setTimeout(() => {
-                            router.replace("/dashboard")
-                        }, 1500)
+                            router.replace("/dashboard");
+                        }, 1500);
                     }
-                })
+                });
         } else {
-            setStatus("error")
-            setMessage("Token tidak valid. Mengarahkan...")
+            setStatus("error");
+            setMessage("Token tidak valid. Mengarahkan...");
             setTimeout(() => {
-                router.replace("/login?error=invalid_or_expired")
-            }, 2000)
+                router.replace("/login?error=invalid_or_expired");
+            }, 2000);
         }
-    }, [router])
+    }, [router, supabase]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
