@@ -22,7 +22,7 @@ export default function ChildPage() {
     const router = useRouter();
     const initRef = useRef(false);
 
-    const { session, supabase } = useSupabase(); // ✅ Ambil dari context
+    const { session, supabase } = useSupabase();
     const [children, setChildren] = useState<Child[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -32,7 +32,6 @@ export default function ChildPage() {
 
     const { children: freshChildren } = useChildren(session?.user.id || null);
 
-    // ✅ Initial load
     useEffect(() => {
         if (initRef.current) return;
         initRef.current = true;
@@ -51,10 +50,12 @@ export default function ChildPage() {
         init();
     }, [router, session]);
 
-    // ✅ Sync children dari hook
     useEffect(() => {
-        if (freshChildren.length && session) {
+        if (!session) return;
+
+        if (freshChildren.length > 0) {
             setChildren(freshChildren);
+        } else if (children.length === 0) {
             setIsLoading(false);
         }
     }, [freshChildren, session]);
