@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Plus, Users, Sparkles } from "lucide-react";
@@ -14,51 +14,34 @@ import { EditChildModal } from "./components/EditChildModal";
 import { DeleteChildModal } from "./components/DeleteChildModal";
 
 import type { Child } from "@/types";
-import { fetchChildrenFromServer } from "@/lib/actions/fetchChildren";
 import { useChildren } from "@/hooks/useChildren";
 import { useSupabase } from "@/providers/SupabaseProvider";
 
-export default function ChildPage() {
+export default function ChildPage({ initialChildren }: { initialChildren: Child[] }) {
     const router = useRouter();
-    const initRef = useRef(false);
-
     const { session, supabase } = useSupabase();
-    const [children, setChildren] = useState<Child[]>([]);
+
+    const [children, setChildren] = useState<Child[]>(initialChildren || []);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    const { children: freshChildren } = useChildren(session?.user.id || null);
+    const { children: freshChildren, isLoading } = useChildren(session?.user.id || null);
 
+    // Sync children state with realtime data
     useEffect(() => {
-        if (initRef.current) return;
-        initRef.current = true;
-
-        const init = async () => {
-            if (!session) {
-                router.replace("/login");
-                return;
-            }
-
-            const serverData = await fetchChildrenFromServer();
-            setChildren(serverData);
-            setIsLoading(false);
-        };
-
-        init();
-    }, [router, session]);
-
-    useEffect(() => {
-        if (!session) return;
-
         if (freshChildren.length > 0) {
             setChildren(freshChildren);
         }
-        setIsLoading(false);
-    }, [freshChildren, session]);
+    }, [freshChildren]);
 
+    // Redirect if no session
+    useEffect(() => {
+        if (!session) {
+            router.replace("/login");
+        }
+    }, [session, router]);
 
     const handleAddChild = async (child: Omit<Child, "id">) => {
         if (!session) return;
@@ -129,7 +112,6 @@ export default function ChildPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
-            {/* Grid background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
 
             <div className="relative z-10 flex">
@@ -197,30 +179,9 @@ export default function ChildPage() {
                 </main>
             </div>
 
-            {/* Modals */}
-            <AddChildModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSave={handleAddChild}
-            />
-            <EditChildModal
-                isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setSelectedChild(null);
-                }}
-                child={selectedChild}
-                onSave={handleEditChild}
-            />
-            <DeleteChildModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => {
-                    setIsDeleteModalOpen(false);
-                    setSelectedChild(null);
-                }}
-                child={selectedChild}
-                onDelete={handleDeleteChild}
-            />
+            <AddChildModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={handleAddChild} />
+            <EditChildModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setSelectedChild(null); }} child={selectedChild} onSave={handleEditChild} />
+            <DeleteChildModal isOpen={isDeleteModalOpen} onClose={() => { setIsDeleteModalOpen(false); setSelectedChild(null); }} child={selectedChild} onDelete={handleDeleteChild} />
         </div>
     );
 }
