@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, ShieldCheck, Sparkles } from "lucide-react";
 import type { SafeZone, Child } from "@/types";
 import { useState } from "react";
+import { useSupabase } from "@/providers/SupabaseProvider";
 import { fetchSafeZonesClient } from "@/hooks/safeZonesClient";
 
 interface SafeZonesPageClientProps {
@@ -16,6 +17,7 @@ interface SafeZonesPageClientProps {
 }
 
 export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZonesPageClientProps) {
+    const { session, supabase } = useSupabase(); // ✅ Ambil dari provider
     const [safeZones, setSafeZones] = useState<SafeZone[]>(initialSafeZones);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -24,8 +26,12 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
     const [isLoading, setIsLoading] = useState(false);
 
     const refreshData = async () => {
+        if (!session) return; // ✅ Pastikan sudah login
         setIsLoading(true);
-        const updatedSafeZones = await fetchSafeZonesClient();
+
+        // ✅ Fetch dari client
+        const updatedSafeZones = await fetchSafeZonesClient(supabase, session.user.id);
+
         setSafeZones(updatedSafeZones);
         setIsLoading(false);
     };

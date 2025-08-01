@@ -1,10 +1,18 @@
-"use server";
+"use client";
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import type { SafeZone } from "@/types";
 
-export async function fetchSafeZonesClient() {
-    const supabase = createServerComponentClient({ cookies });
-    const { data: zones } = await supabase.from("safe_zones").select("*");
-    return zones || [];
+export async function fetchSafeZonesClient(supabase: ReturnType<typeof useSupabase>["supabase"], userId: string) {
+    const { data: zones, error } = await supabase
+        .from("safe_zones")
+        .select("*")
+        .eq("parent_id", userId);
+
+    if (error) {
+        console.error("Error fetching safe zones:", error);
+        return [];
+    }
+
+    return zones as SafeZone[];
 }
