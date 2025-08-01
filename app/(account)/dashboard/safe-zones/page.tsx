@@ -6,9 +6,14 @@ import { useRouter } from "next/navigation";
 import DashboardSidebar from "@/components/layouts/dashboardSidebar";
 import DashboardHeader from "@/components/layouts/DashboardHeader";
 import { useSupabase } from "@/providers/SupabaseProvider";
-import { SafeZonesPageClient } from "./components/client";
+const SafeZonesPageClient = dynamic(() =>
+    import("./components/client").then((mod) => mod.SafeZonesPageClient),
+    { ssr: false }
+);
+// import { SafeZonesPageClient } from "./components/client";
 
 import type { SafeZone, Child } from "@/types";
+import dynamic from "next/dynamic";
 
 export default function SafeZonesPage() {
     const { session, supabase } = useSupabase();
