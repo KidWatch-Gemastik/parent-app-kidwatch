@@ -32,6 +32,7 @@ export default function ChildPage() {
 
     const { children: freshChildren } = useChildren(session?.user.id || null);
 
+    // Ambil snapshot server di awal
     useEffect(() => {
         if (initRef.current) return;
         initRef.current = true;
@@ -50,16 +51,18 @@ export default function ChildPage() {
         init();
     }, [router, session]);
 
+    // Update dari realtime, tapi jangan kosongkan state
     useEffect(() => {
         if (!session) return;
 
+        // Hanya timpa state kalau ada data baru
         if (freshChildren.length > 0) {
             setChildren(freshChildren);
+            setIsLoading(false);
         }
-        setIsLoading(false);
     }, [freshChildren, session]);
 
-
+    // --- CRUD Handlers ---
     const handleAddChild = async (child: Omit<Child, "id">) => {
         if (!session) return;
         const qr = uuidv4();
@@ -127,9 +130,9 @@ export default function ChildPage() {
         setSelectedChild(null);
     };
 
+    // --- RENDER ---
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
-            {/* Grid background */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
 
             <div className="relative z-10 flex">

@@ -161,7 +161,7 @@ export default function DashboardSidebar() {
                         <>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href="/perangkat">
+                                    <Link href="/dashboard/perangkat">
                                         <Button
                                             variant="ghost"
                                             size="icon"
