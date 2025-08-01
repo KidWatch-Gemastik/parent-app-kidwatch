@@ -1,48 +1,34 @@
-"use client"
-import { SafeZoneCard } from "./SafeZoneCard"
-import { AddSafeZoneModal } from "./AddSafeZoneModal"
-import { EditSafeZoneModal } from "./EditSafeZoneModal"
-import { DeleteSafeZoneModal } from "./DeleteSafeZoneModal"
-import { Button } from "@/components/ui/button"
-import { Plus, ShieldCheck, Sparkles } from "lucide-react"
-import { fetchSafeZones } from "@/lib/actions/safeZones"
-import type { SafeZone, Child } from "@/types"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { SafeZoneCard } from "./SafeZoneCard";
+import { AddSafeZoneModal } from "./AddSafeZoneModal";
+import { EditSafeZoneModal } from "./EditSafeZoneModal";
+import { DeleteSafeZoneModal } from "./DeleteSafeZoneModal";
+import { Button } from "@/components/ui/button";
+import { Plus, ShieldCheck, Sparkles } from "lucide-react";
+import type { SafeZone, Child } from "@/types";
+import { useState } from "react";
+import { fetchSafeZonesClient } from "@/hooks/safeZonesClient";
 
 interface SafeZonesPageClientProps {
-    initialSafeZones: SafeZone[]
-    childrenList: Child[]
+    initialSafeZones: SafeZone[];
+    childrenList: Child[];
 }
 
 export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZonesPageClientProps) {
-    const router = useRouter()
-    const [safeZones, setSafeZones] = useState<SafeZone[]>(initialSafeZones)
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [selectedZone, setSelectedZone] = useState<SafeZone | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
+    const [safeZones, setSafeZones] = useState<SafeZone[]>(initialSafeZones);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedZone, setSelectedZone] = useState<SafeZone | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const refreshData = async () => {
-        setIsLoading(true)
-        // Re-fetch data from server actions
-        const updatedSafeZones = await fetchSafeZones()
-        setSafeZones(updatedSafeZones)
-        setIsLoading(false)
-        router.refresh() // Revalidate the current path to ensure server data is fresh
-    }
-
-    const openEditModal = (zone: SafeZone) => {
-        setSelectedZone(zone)
-        setIsEditModalOpen(true)
-    }
-
-    const openDeleteModal = (zone: SafeZone) => {
-        setSelectedZone(zone)
-        setIsDeleteModalOpen(true)
-    }
+        setIsLoading(true);
+        const updatedSafeZones = await fetchSafeZonesClient();
+        setSafeZones(updatedSafeZones);
+        setIsLoading(false);
+    };
 
     return (
         <>
@@ -59,9 +45,9 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
                         </div>
                     </div>
                     <Button
-                        variant={'ghost'}
+                        variant="ghost"
                         onClick={() => setIsAddModalOpen(true)}
-                        className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white hover:from-emerald-600 hover:to-mint-600 rounded-xl shadow-lg hover:shadow-emerald-500/25 px-6 py-3 font-semibold transition-all duration-300 hover:scale-105"
+                        className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white hover:from-emerald-600 hover:to-mint-600 rounded-xl shadow-lg px-6 py-3 font-semibold transition-all duration-300 hover:scale-105"
                     >
                         <Plus className="w-5 h-5 mr-2" />
                         Tambah Zona Aman
@@ -72,14 +58,22 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="h-64 bg-gray-900/80 backdrop-blur-xl border-emerald-500/30 shadow-xl rounded-xl" />
+                        <div
+                            key={i}
+                            className="h-64 bg-gray-900/80 backdrop-blur-xl border-emerald-500/30 shadow-xl rounded-xl"
+                        />
                     ))}
                 </div>
             ) : safeZones.length > 0 ? (
                 <section className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {safeZones.map((zone) => (
-                            <SafeZoneCard key={zone.id} zone={zone} onEdit={openEditModal} onDelete={openDeleteModal} />
+                            <SafeZoneCard
+                                key={zone.id}
+                                zone={zone}
+                                onEdit={(z) => { setSelectedZone(z); setIsEditModalOpen(true); }}
+                                onDelete={(z) => { setSelectedZone(z); setIsDeleteModalOpen(true); }}
+                            />
                         ))}
                     </div>
                 </section>
@@ -92,9 +86,9 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
                         <h3 className="text-xl font-bold text-white mb-2">Belum Ada Zona Aman Terdaftar</h3>
                         <p className="text-gray-400 mb-6">Mulai dengan menambahkan zona aman pertama Anda</p>
                         <Button
-                            variant={'ghost'}
+                            variant="ghost"
                             onClick={() => setIsAddModalOpen(true)}
-                            className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white hover:from-emerald-600 hover:to-mint-600 rounded-xl shadow-lg hover:shadow-emerald-500/25 px-6 py-3 font-semibold"
+                            className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white hover:from-emerald-600 hover:to-mint-600 rounded-xl shadow-lg px-6 py-3 font-semibold"
                         >
                             <Plus className="w-5 h-5 mr-2" />
                             Tambah Zona Aman Pertama
@@ -113,10 +107,7 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
 
             <EditSafeZoneModal
                 isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false)
-                    setSelectedZone(null)
-                }}
+                onClose={() => { setIsEditModalOpen(false); setSelectedZone(null); }}
                 zone={selectedZone}
                 onSave={refreshData}
                 childrenList={childrenList}
@@ -124,13 +115,10 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
 
             <DeleteSafeZoneModal
                 isOpen={isDeleteModalOpen}
-                onClose={() => {
-                    setIsDeleteModalOpen(false)
-                    setSelectedZone(null)
-                }}
+                onClose={() => { setIsDeleteModalOpen(false); setSelectedZone(null); }}
                 zone={selectedZone}
                 onDelete={refreshData}
             />
         </>
-    )
+    );
 }
