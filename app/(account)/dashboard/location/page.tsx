@@ -1,85 +1,105 @@
-import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { ChildLocationPage } from "./components/child-location-page"
-import type { Child } from "@/types"
-import DashboardSidebar from "@/components/layouts/dashboardSidebar"
-import DashboardHeader from "@/components/layouts/DashboardHeader"
-import { getAgeFromDate } from "@/lib/function"
+"use client";
 
-export default async function Page() {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+import { useEffect, useState } from "react";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import type { Child } from "@/types";
+import DashboardSidebar from "@/components/layouts/dashboardSidebar";
+import DashboardHeader from "@/components/layouts/DashboardHeader";
+import { ChildLocationPage as ChildLocationClient } from "./components/child-location-page";
+import { getAgeFromDate } from "@/lib/function";
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+export default function ChildLocationPageWrapper({ userId }: { userId: string }) {
+    const { supabase } = useSupabase();
+    const [children, setChildren] = useState<Child[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    console.log("User ID from Supabase Auth:", user?.id)
-
-    let initialChildren: Child[] = []
-
-    if (user?.id) {
-        const parentId = user.id
+    const fetchChildrenWithLocations = async () => {
+        setLoading(true);
 
         const { data: childrenData, error: childrenError } = await supabase
             .from("children")
             .select("id, name, date_of_birth, sex")
-            .eq("parent_id", parentId)
+            .eq("parent_id", userId);
 
         if (childrenError) {
-            console.error("Error fetching children:", childrenError.message)
+            console.error("Error fetching children:", childrenError.message);
+            setLoading(false);
+            return;
         }
 
-        if (childrenData && childrenData.length > 0) {
-            const childIds = childrenData.map((child) => child.id)
+        if (childrenData?.length) {
+            const childIds = childrenData.map((child) => child.id);
 
             const { data: locationsData, error: locationError } = await supabase
                 .from("locations")
                 .select("child_id, latitude, longitude, timestamp, accuracy")
                 .in("child_id", childIds)
-                .order("timestamp", { ascending: false })
+                .order("timestamp", { ascending: false });
 
             if (locationError) {
-                console.error("Error fetching locations:", locationError.message)
+                console.error("Error fetching locations:", locationError.message);
             }
 
             const latestLocationMap = new Map<
                 string,
                 { latitude: number; longitude: number; timestamp: string; accuracy: number }
-            >()
+            >();
 
-            if (locationsData) {
-                for (const loc of locationsData) {
-                    if (!latestLocationMap.has(loc.child_id)) {
-                        latestLocationMap.set(loc.child_id, loc)
-                    }
+            locationsData?.forEach((loc) => {
+                if (!latestLocationMap.has(loc.child_id)) {
+                    latestLocationMap.set(loc.child_id, loc);
                 }
-            }
+            });
 
-            initialChildren = childrenData.map((child) => {
-                const age = getAgeFromDate(child.date_of_birth)
-                const latestLoc = latestLocationMap.get(child.id)
+            const mappedChildren: Child[] = childrenData.map((child) => {
+                const age = getAgeFromDate(child.date_of_birth);
+                const latestLoc = latestLocationMap.get(child.id);
 
                 return {
                     id: child.id,
                     name: child.name,
-                    age: age,
+                    age,
                     sex: child.sex || "Unknown",
-                    // avatar: child.avatar || `/placeholder.svg?height=40&width=40&text=${child.name[0]}`,
                     date_of_birth: child.date_of_birth,
                     location: latestLoc
                         ? `${latestLoc.latitude.toFixed(4)}, ${latestLoc.longitude.toFixed(4)}`
                         : "Tidak diketahui",
                     safeZoneStatus: latestLoc ? "Di luar zona aman" : "Tidak diatur",
                     gpsAccuracy: latestLoc ? `${latestLoc.accuracy} meter` : "Tidak diketahui",
-                    lastSeen: latestLoc ? new Date(latestLoc.timestamp).toLocaleString() : "Tidak diketahui",
+                    lastSeen: latestLoc
+                        ? new Date(latestLoc.timestamp).toLocaleString()
+                        : "Tidak diketahui",
                     status: latestLoc ? "online" : "offline",
-                }
-            })
-        }
-    }
+                };
+            });
 
-    console.log("Children loaded:", initialChildren)
+            setChildren(mappedChildren);
+        } else {
+            setChildren([]);
+        }
+
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        if (userId) {
+            fetchChildrenWithLocations();
+
+            // Optional: subscribe ke perubahan lokasi anak
+            const channel = supabase
+                .channel("locations_changes")
+                .on(
+                    "postgres_changes",
+                    { event: "*", schema: "public", table: "locations" },
+                    () => fetchChildrenWithLocations()
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [userId]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
@@ -91,9 +111,9 @@ export default async function Page() {
                         title="Manajemen Lokasi"
                         description="Pantau lokasi anak-anak Anda secara real-time"
                     />
-                    <ChildLocationPage initialChildren={initialChildren} userId={user?.id} />
+                    <ChildLocationClient initialChildren={children} userId={userId} />
                 </main>
             </div>
         </div>
-    )
+    );
 }

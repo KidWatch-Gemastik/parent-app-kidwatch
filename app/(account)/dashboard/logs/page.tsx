@@ -1,55 +1,56 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from "react";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     Loader2,
     PhoneIncoming,
     PhoneOutgoing,
     PhoneMissed,
     PhoneOff,
-} from "lucide-react"
-import DashboardSidebar from "@/components/layouts/dashboardSidebar"
-import DashboardHeader from "@/components/layouts/DashboardHeader"
+} from "lucide-react";
+import DashboardSidebar from "@/components/layouts/dashboardSidebar";
+import DashboardHeader from "@/components/layouts/DashboardHeader";
 import {
     Sheet,
     SheetContent,
     SheetHeader,
     SheetTitle,
     SheetDescription,
-} from "@/components/ui/sheet"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type CallLog = {
-    id: string
-    child_id: string
-    phone_number: string
-    type: "incoming" | "outgoing" | "missed"
-    duration: number
-    timestamp: string
-    children?: { name: string, sex: 'Laki-laki' | 'Perempuan' }
-}
+    id: string;
+    child_id: string;
+    phone_number: string;
+    type: "incoming" | "outgoing" | "missed";
+    duration: number;
+    timestamp: string;
+    children?: { name: string; sex: "Laki-laki" | "Perempuan" };
+};
 
 export default function CallLogsPage() {
-    const [logs, setLogs] = useState<CallLog[]>([])
-    const [loading, setLoading] = useState(true)
-    const [selectedLog, setSelectedLog] = useState<CallLog | null>(null)
+    const { supabase } = useSupabase();
+    const [logs, setLogs] = useState<CallLog[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedLog, setSelectedLog] = useState<CallLog | null>(null);
 
     const fetchLogs = async () => {
-        setLoading(true)
+        setLoading(true);
         const { data, error } = await supabase
             .from("call_logs")
             .select("*, children(name, sex)")
-            .order("timestamp", { ascending: false })
+            .order("timestamp", { ascending: false });
 
-        if (!error && data) setLogs(data as unknown as CallLog[])
-        setLoading(false)
-    }
+        if (!error && data) setLogs(data as unknown as CallLog[]);
+        setLoading(false);
+    };
 
     useEffect(() => {
-        fetchLogs()
+        fetchLogs();
 
         const channel = supabase
             .channel("call_logs_changes")
@@ -58,44 +59,48 @@ export default function CallLogsPage() {
                 { event: "*", schema: "public", table: "call_logs" },
                 (payload) => {
                     if (payload.eventType === "INSERT") {
-                        setLogs((prev) => [payload.new as CallLog, ...prev])
+                        setLogs((prev) => [payload.new as CallLog, ...prev]);
                     } else if (payload.eventType === "DELETE") {
-                        setLogs((prev) => prev.filter((log) => log.id !== payload.old.id))
+                        setLogs((prev) =>
+                            prev.filter((log) => log.id !== (payload.old as any).id)
+                        );
                     } else if (payload.eventType === "UPDATE") {
                         setLogs((prev) =>
                             prev.map((log) =>
-                                log.id === payload.new.id ? (payload.new as CallLog) : log
+                                log.id === (payload.new as any).id
+                                    ? (payload.new as CallLog)
+                                    : log
                             )
-                        )
+                        );
                     }
                 }
             )
-            .subscribe()
+            .subscribe();
 
         return () => {
-            supabase.removeChannel(channel)
-        }
-    }, [])
+            supabase.removeChannel(channel);
+        };
+    }, [supabase]);
 
     const getTypeIcon = (type: string) => {
         switch (type) {
             case "incoming":
-                return <PhoneIncoming className="text-green-400 w-5 h-5" />
+                return <PhoneIncoming className="text-green-400 w-5 h-5" />;
             case "outgoing":
-                return <PhoneOutgoing className="text-blue-400 w-5 h-5" />
+                return <PhoneOutgoing className="text-blue-400 w-5 h-5" />;
             case "missed":
-                return <PhoneMissed className="text-red-400 w-5 h-5" />
+                return <PhoneMissed className="text-red-400 w-5 h-5" />;
             default:
-                return <PhoneOff className="text-gray-400 w-5 h-5" />
+                return <PhoneOff className="text-gray-400 w-5 h-5" />;
         }
-    }
+    };
 
     const formatDuration = (sec: number) => {
-        if (!sec) return "0s"
-        const m = Math.floor(sec / 60)
-        const s = sec % 60
-        return m > 0 ? `${m}m ${s}s` : `${s}s`
-    }
+        if (!sec) return "0s";
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return m > 0 ? `${m}m ${s}s` : `${s}s`;
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
@@ -199,11 +204,9 @@ export default function CallLogsPage() {
                                 <div className="mt-6 space-y-4 text-gray-300">
                                     <Avatar className="w-16 h-16 ring-2 ring-emerald-500/30 group-hover:ring-emerald-500/50 transition-all duration-300">
                                         <AvatarImage
-                                            src={
-                                                selectedLog.children?.sex === "Laki-laki"
-                                                    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(selectedLog.children?.name ?? '-')}`
-                                                    : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(selectedLog.children?.name ?? '-')}`
-                                            }
+                                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+                                                selectedLog.children?.name ?? "-"
+                                            )}`}
                                             alt={selectedLog.children?.name}
                                         />
                                         <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white font-bold text-lg">
@@ -241,5 +244,5 @@ export default function CallLogsPage() {
                 </main>
             </div>
         </div>
-    )
+    );
 }

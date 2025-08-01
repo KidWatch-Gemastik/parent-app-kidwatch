@@ -1,75 +1,68 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { supabaseAuth } from "@/lib/supabase-auth"
-import { supabase } from "@/lib/supabase"
-import { v4 as uuidv4 } from "uuid"
-import { Plus, Users, Sparkles } from "lucide-react"
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import { Plus, Users, Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import DashboardSidebar from "@/components/layouts/dashboardSidebar"
-import DashboardHeader from "@/components/layouts/DashboardHeader"
-import { ChildCard } from "./components/ChildCard"
-import { AddChildModal } from "./components/AddChildModal"
-import { EditChildModal } from "./components/EditChildModal"
-import { DeleteChildModal } from "./components/DeleteChildModal"
+import { Button } from "@/components/ui/button";
+import DashboardSidebar from "@/components/layouts/dashboardSidebar";
+import DashboardHeader from "@/components/layouts/DashboardHeader";
+import { ChildCard } from "./components/ChildCard";
+import { AddChildModal } from "./components/AddChildModal";
+import { EditChildModal } from "./components/EditChildModal";
+import { DeleteChildModal } from "./components/DeleteChildModal";
 
-import type { Child } from "@/types"
-import { fetchChildrenFromServer } from "@/lib/actions/fetchChildren"
-import { useChildren } from "@/hooks/useChildren"
+import type { Child } from "@/types";
+import { fetchChildrenFromServer } from "@/lib/actions/fetchChildren";
+import { useChildren } from "@/hooks/useChildren";
+import { useSupabase } from "@/providers/SupabaseProvider";
 
 export default function ChildPage() {
-    const router = useRouter()
-    const initRef = useRef(false)
+    const router = useRouter();
+    const initRef = useRef(false);
 
-    const [session, setSession] = useState<any>(null)
-    const [children, setChildren] = useState<Child[]>([])
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [selectedChild, setSelectedChild] = useState<Child | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const { session, supabase } = useSupabase(); // ✅ Ambil dari context
+    const [children, setChildren] = useState<Child[]>([]);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
+    const { children: freshChildren } = useChildren(session?.user.id || null);
 
-    const { children: freshChildren } = useChildren(session?.user.id || null)
-
+    // ✅ Initial load
     useEffect(() => {
-        if (initRef.current) return
-        initRef.current = true
+        if (initRef.current) return;
+        initRef.current = true;
 
         const init = async () => {
-            const { data: { session: s } } = await supabaseAuth.auth.getSession()
-            if (!s) {
-                router.replace("/login")
-                return
+            if (!session) {
+                router.replace("/login");
+                return;
             }
-            setSession(s)
 
-            const serverData = await fetchChildrenFromServer()
-            setChildren(serverData)
-            setIsLoading(false)
-        }
+            const serverData = await fetchChildrenFromServer();
+            setChildren(serverData);
+            setIsLoading(false);
+        };
 
-        init()
-    }, [router, supabase])
+        init();
+    }, [router, session]);
 
+    // ✅ Sync children dari hook
     useEffect(() => {
         if (freshChildren.length && session) {
-            setChildren(freshChildren)
+            setChildren(freshChildren);
+            setIsLoading(false);
         }
-    }, [freshChildren, session])
-
-    useEffect(() => {
-        if (freshChildren.length && session) {
-            setChildren(freshChildren)
-            setIsLoading(false)
-        }
-    }, [freshChildren, session])
+    }, [freshChildren, session]);
 
     const handleAddChild = async (child: Omit<Child, "id">) => {
-        if (!session) return
-        const qr = uuidv4()
+        if (!session) return;
+        const qr = uuidv4();
+
         const { data, error } = await supabase
             .from("children")
             .insert({
@@ -80,20 +73,21 @@ export default function ChildPage() {
                 qr_code: qr,
             })
             .select()
-            .single()
+            .single();
 
         if (error) {
-            console.error(error)
-            return
+            console.error("Gagal menambahkan anak:", error);
+            return;
         }
-        setChildren((prev) => [...prev, { ...child, id: data.id, qr_code: data.qr_code }])
-        setIsAddModalOpen(false)
-    }
+
+        setChildren((prev) => [...prev, { ...child, id: data.id, qr_code: data.qr_code }]);
+        setIsAddModalOpen(false);
+    };
 
     const handleEditChild = async (updated: Child) => {
-        if (!session) return
+        if (!session) return;
 
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("children")
             .update({
                 name: updated.name,
@@ -101,38 +95,36 @@ export default function ChildPage() {
                 sex: updated.sex,
             })
             .eq("id", updated.id)
-            .eq("parent_id", session.user.id)
+            .eq("parent_id", session.user.id);
 
         if (error) {
-            console.error("Gagal update anak:", error)
-            return
+            console.error("Gagal update anak:", error);
+            return;
         }
 
-        setChildren((prev) =>
-            prev.map((c) => (c.id === updated.id ? updated : c))
-        )
-        setIsEditModalOpen(false)
-        setSelectedChild(null)
-    }
+        setChildren((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        setIsEditModalOpen(false);
+        setSelectedChild(null);
+    };
 
     const handleDeleteChild = async (childId: string) => {
-        if (!session) return
+        if (!session) return;
 
         const { error } = await supabase
             .from("children")
             .delete()
             .eq("id", childId)
-            .eq("parent_id", session.user.id)
+            .eq("parent_id", session.user.id);
 
         if (error) {
-            console.error("Gagal menghapus anak:", error)
-            return
+            console.error("Gagal menghapus anak:", error);
+            return;
         }
 
-        setChildren((prev) => prev.filter((c) => c.id !== childId))
-        setIsDeleteModalOpen(false)
-        setSelectedChild(null)
-    }
+        setChildren((prev) => prev.filter((c) => c.id !== childId));
+        setIsDeleteModalOpen(false);
+        setSelectedChild(null);
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
@@ -180,12 +172,12 @@ export default function ChildPage() {
                                     key={c.id}
                                     child={c}
                                     onEdit={() => {
-                                        setSelectedChild(c)
-                                        setIsEditModalOpen(true)
+                                        setSelectedChild(c);
+                                        setIsEditModalOpen(true);
                                     }}
                                     onDelete={() => {
-                                        setSelectedChild(c)
-                                        setIsDeleteModalOpen(true)
+                                        setSelectedChild(c);
+                                        setIsDeleteModalOpen(true);
                                     }}
                                 />
                             ))}
@@ -195,10 +187,7 @@ export default function ChildPage() {
                             <div className="text-center">
                                 <Users className="w-16 h-16 text-emerald-400 mb-4" />
                                 <p className="text-white text-lg mb-2">Belum Ada Anak Terdaftar</p>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => setIsAddModalOpen(true)}
-                                >
+                                <Button variant="ghost" onClick={() => setIsAddModalOpen(true)}>
                                     Tambah Anak Pertama
                                 </Button>
                             </div>
@@ -216,8 +205,8 @@ export default function ChildPage() {
             <EditChildModal
                 isOpen={isEditModalOpen}
                 onClose={() => {
-                    setIsEditModalOpen(false)
-                    setSelectedChild(null)
+                    setIsEditModalOpen(false);
+                    setSelectedChild(null);
                 }}
                 child={selectedChild}
                 onSave={handleEditChild}
@@ -225,12 +214,12 @@ export default function ChildPage() {
             <DeleteChildModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => {
-                    setIsDeleteModalOpen(false)
-                    setSelectedChild(null)
+                    setIsDeleteModalOpen(false);
+                    setSelectedChild(null);
                 }}
                 child={selectedChild}
                 onDelete={handleDeleteChild}
             />
         </div>
-    )
+    );
 }

@@ -1,40 +1,44 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useMemo } from "react"
-import { supabaseAuth } from "@/lib/supabase-auth"
-import { useChatOverview } from "@/hooks/useChatOverview"
-import ChatWindow from "./components/ChatWindow"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react"
-import { cn } from "@/lib/utils"
-import Link from "next/link"
-import Image from "next/image"
+import { useEffect, useState, useMemo } from "react";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { useChatOverview } from "@/hooks/useChatOverview";
+import ChatWindow from "./components/ChatWindow";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, LayoutDashboard } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function ChatPage() {
-    const [parentId, setParentId] = useState<string | null>(null)
-    const [selectedChild, setSelectedChild] = useState<string | null>(null)
-    const [collapsed, setCollapsed] = useState(false)
-    const [search, setSearch] = useState("")
+    const { supabase } = useSupabase();
+    const [parentId, setParentId] = useState<string | null>(null);
+    const [selectedChild, setSelectedChild] = useState<string | null>(null);
+    const [collapsed, setCollapsed] = useState(false);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
-        supabaseAuth.auth.getUser().then(({ data }) => {
-            setParentId(data.user?.id ?? null)
-        })
-    }, [])
+        const fetchUser = async () => {
+            const { data } = await supabase.auth.getUser();
+            setParentId(data.user?.id ?? null);
+        };
 
-    const { list, loading } = useChatOverview(parentId || "")
-    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false
-    const showSidebar = !selectedChild || !isMobile
-    const selectedChildData = list.find((c) => c.child_id === selectedChild)
+        fetchUser();
+    }, [supabase]);
+
+    const { list, loading } = useChatOverview(parentId || "");
+    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+    const showSidebar = !selectedChild || !isMobile;
+    const selectedChildData = list.find((c) => c.child_id === selectedChild);
 
     const filteredList = useMemo(() => {
         return list.filter((child) =>
             child.child_name.toLowerCase().includes(search.toLowerCase())
-        )
-    }, [list, search])
+        );
+    }, [list, search]);
 
     return (
         <div className="flex h-[calc(100vh-2rem)] rounded-lg overflow-hidden bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative">
@@ -71,7 +75,7 @@ export default function ChatPage() {
                         <div className="p-3 border-b border-emerald-500/20 bg-black/20">
                             <Input
                                 placeholder="Cari anak..."
-                                value={search}                      // ✅ Binding search
+                                value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="rounded-full bg-slate-900/40 border-emerald-500/20 focus-visible:ring-emerald-500/30"
                             />
@@ -85,10 +89,7 @@ export default function ChatPage() {
                                 {/* Skeleton Loading */}
                                 <div className="flex flex-col gap-4 w-4/5">
                                     {[...Array(5)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-center gap-3 animate-pulse"
-                                        >
+                                        <div key={i} className="flex items-center gap-3 animate-pulse">
                                             <div className="w-12 h-12 rounded-full bg-emerald-500/20" />
                                             {!collapsed && (
                                                 <div className="flex-1">
@@ -196,5 +197,5 @@ export default function ChatPage() {
                 </div>
             )}
         </div>
-    )
+    );
 }
