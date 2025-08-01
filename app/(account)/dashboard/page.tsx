@@ -26,31 +26,37 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession"
+// import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession"
 import { useChildren } from "@/hooks/useChildren"
 import type { Child } from "@/types"
 import { cn } from "@/lib/utils"
 import { getAgeFromDate } from "@/lib/function"
+import { useSupabase } from "@/providers/SupabaseProvider"
 
 export default function DashboardPage() {
-    const router = useRouter()
-    const { user, loading: loadingUser } = useSupabaseAuthSession()
-    const { children: fetchedChildren, isLoading: loadingChildren } = useChildren(user?.id || null)
-    const [selectedChild, setSelectedChild] = useState<Child | null>(null)
+    const router = useRouter();
+    const { session } = useSupabase();
+    const user = session?.user ?? null;
 
+    const { children: fetchedChildren, isLoading: loadingChildren } = useChildren(user?.id || null);
+    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+
+    // Redirect ke login jika tidak ada user
     useEffect(() => {
-        if (!loadingUser && !user) {
-            router.replace("/login")
+        if (!user && !loadingChildren) {
+            router.replace("/login");
         }
-    }, [loadingUser, user, router])
+    }, [user, loadingChildren, router]);
 
+    // Set default child setelah data anak di-load
     useEffect(() => {
         if (!loadingChildren && fetchedChildren.length > 0 && !selectedChild) {
-            setSelectedChild(fetchedChildren[0])
+            setSelectedChild(fetchedChildren[0]);
         }
-    }, [fetchedChildren, loadingChildren, selectedChild])
+    }, [fetchedChildren, loadingChildren, selectedChild]);
 
-    if (loadingUser || loadingChildren || !user) {
+    // Loading UI
+    if (!user || loadingChildren) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
                 <div className="text-center">
@@ -60,10 +66,10 @@ export default function DashboardPage() {
                     <p className="text-emerald-400 font-medium">Memuat dashboard...</p>
                 </div>
             </div>
-        )
+        );
     }
 
-    const currentChild = selectedChild || fetchedChildren[0]
+    const currentChild = selectedChild || fetchedChildren[0];
 
     // Placeholder data for recent activities and alerts
     const recentActivities = [

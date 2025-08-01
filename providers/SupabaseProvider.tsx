@@ -1,15 +1,43 @@
 "use client";
 
-import { supabaseBrowserClient } from "@/lib/supabase/client";
-import { createContext, useContext } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { Session } from "@supabase/supabase-js";
+import { useState, useEffect, createContext, useContext } from "react";
 import type { Database } from "@/types/supabase";
 
-const SupabaseContext = createContext<SupabaseClient<Database> | null>(null);
+interface SupabaseContextType {
+    session: Session | null;
+    supabase: ReturnType<typeof createBrowserClient<Database>>;
+}
 
-export function SupabaseProvider({ children }: { children: React.ReactNode }) {
+const SupabaseContext = createContext<SupabaseContextType | null>(null);
+
+export default function SupabaseProvider({
+    initialSession,
+    children,
+}: {
+    initialSession: Session | null;
+    children: React.ReactNode;
+}) {
+    const [supabase] = useState(() =>
+        createBrowserClient<Database>(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+    );
+    const [session, setSession] = useState<Session | null>(initialSession);
+
+    useEffect(() => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, newSession) => {
+            setSession(newSession);
+        });
+        return () => subscription.unsubscribe();
+    }, [supabase]);
+
     return (
-        <SupabaseContext.Provider value={supabaseBrowserClient}>
+        <SupabaseContext.Provider value={{ session, supabase }}>
             {children}
         </SupabaseContext.Provider>
     );
