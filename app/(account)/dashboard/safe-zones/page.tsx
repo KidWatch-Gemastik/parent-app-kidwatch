@@ -98,16 +98,14 @@ export default function SafeZonesPage() {
                             </div>
                         }
                     >
-                        {!loadingData ? (
-                            <SafeZonesPageClient
-                                initialSafeZones={initialSafeZones}
-                                childrenList={childrenList}
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center py-20 text-white">
-                                Memuat data zona aman...
-                            </div>
-                        )}
+                        <Suspense fallback={<div>Loading...</div>}>
+                            {!loadingData && (
+                                <SafeZonesPageClient
+                                    initialSafeZones={initialSafeZones}
+                                    childrenList={childrenList}
+                                />
+                            )}
+                        </Suspense>
                     </Suspense>
                 </main>
             </div>
