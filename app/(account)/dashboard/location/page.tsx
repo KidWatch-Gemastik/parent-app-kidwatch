@@ -1,6 +1,5 @@
-import { supabase } from "@/lib/supabase"
-// import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { supabaseAuth } from "@/lib/supabase-auth"
+import { cookies } from "next/headers"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { ChildLocationPage } from "./components/child-location-page"
 import type { Child } from "@/types"
 import DashboardSidebar from "@/components/layouts/dashboardSidebar"
@@ -8,11 +7,12 @@ import DashboardHeader from "@/components/layouts/DashboardHeader"
 import { getAgeFromDate } from "@/lib/function"
 
 export default async function Page() {
-
+    const cookieStore = cookies()
+    const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
     const {
         data: { user },
-    } = await supabaseAuth.auth.getUser()
+    } = await supabase.auth.getUser()
 
     console.log("User ID from Supabase Auth:", user?.id)
 
