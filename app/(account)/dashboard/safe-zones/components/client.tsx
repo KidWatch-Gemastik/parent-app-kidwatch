@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, ShieldCheck, Sparkles } from "lucide-react";
 import type { SafeZone, Child } from "@/types";
 import { useState } from "react";
-import { fetchSafeZonesClient } from "@/hooks/safeZonesClient";
+import { useSafeZones } from "@/hooks/safeZonesClient";
 
 interface SafeZonesPageClientProps {
     initialSafeZones: SafeZone[];
@@ -25,7 +25,7 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
 
     const refreshData = async () => {
         setIsLoading(true);
-        const updatedSafeZones = await fetchSafeZonesClient();
+        const updatedSafeZones = await useSafeZones();
         setSafeZones(updatedSafeZones);
         setIsLoading(false);
     };
