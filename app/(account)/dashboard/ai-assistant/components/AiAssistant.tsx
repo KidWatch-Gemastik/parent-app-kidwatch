@@ -9,10 +9,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-// import { supabase } from "@/lib/supabase";
 import { useSupabase } from "@/providers/SupabaseProvider";
-
 
 interface ChatEntry {
     role: "user" | "ai";
@@ -29,14 +26,14 @@ interface ChatMedia {
 }
 
 export default function AIAssistant() {
-
     const [question, setQuestion] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatEntry[]>([]);
     const [chatMedia, setChatMedia] = useState<ChatMedia[]>([]);
     const [loading, setLoading] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const [collapsed, setCollapsed] = useState<{ [date: string]: boolean }>({});
-    const supabase = useSupabase();
+
+    const { supabase } = useSupabase(); // ✅ Fix: ambil supabase client
 
     const fetchChatHistory = async () => {
         const { data, error } = await supabase
@@ -52,16 +49,8 @@ export default function AIAssistant() {
 
         const formatted: ChatEntry[] =
             data?.flatMap((item: any) => [
-                {
-                    role: "user",
-                    message: item.question,
-                    timestamp: item.created_at,
-                },
-                {
-                    role: "ai",
-                    message: item.answer || "❌ Tidak ada jawaban",
-                    timestamp: item.created_at,
-                },
+                { role: "user", message: item.question, timestamp: item.created_at },
+                { role: "ai", message: item.answer || "❌ Tidak ada jawaban", timestamp: item.created_at },
             ]) || [];
 
         setChatHistory(formatted);
@@ -96,9 +85,8 @@ export default function AIAssistant() {
         const ask = q || question;
         if (!ask.trim()) return;
 
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
+        const { data } = await supabase.auth.getUser(); // ✅ supabase.auth sekarang valid
+        const user = data.user;
 
         if (!user) {
             console.error("User belum login");
@@ -121,10 +109,7 @@ export default function AIAssistant() {
             const res = await fetch("/api/ai-assistant", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    question: ask,
-                    userId: user.id, // ✅ kirim userId
-                }),
+                body: JSON.stringify({ question: ask, userId: user.id }),
             });
 
             const data = await res.json();
@@ -145,7 +130,6 @@ export default function AIAssistant() {
             setLoading(false);
         }
     };
-
 
     const quickActions = [
         "Bagaimana aktivitas anak hari ini?",

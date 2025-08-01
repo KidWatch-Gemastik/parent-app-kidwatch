@@ -1,8 +1,8 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import type { Session } from "@supabase/supabase-js";
-import { useState, useEffect, createContext, useContext } from "react";
+import { Session } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { Database } from "@/types/supabase";
 
 interface SupabaseContextType {
@@ -12,12 +12,12 @@ interface SupabaseContextType {
 
 const SupabaseContext = createContext<SupabaseContextType | null>(null);
 
-export default function SupabaseProvider({
-    initialSession,
+export function SupabaseProvider({
     children,
+    initialSession = null,
 }: {
-    initialSession: Session | null;
     children: React.ReactNode;
+    initialSession?: Session | null;
 }) {
     const [supabase] = useState(() =>
         createBrowserClient<Database>(
@@ -25,6 +25,7 @@ export default function SupabaseProvider({
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
     );
+
     const [session, setSession] = useState<Session | null>(initialSession);
 
     useEffect(() => {
@@ -45,6 +46,7 @@ export default function SupabaseProvider({
 
 export function useSupabase() {
     const context = useContext(SupabaseContext);
-    if (!context) throw new Error("useSupabase must be used within SupabaseProvider");
+    if (!context)
+        throw new Error("useSupabase must be used within SupabaseProvider");
     return context;
 }

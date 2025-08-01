@@ -1,67 +1,83 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { useChatMessages } from "@/hooks/useChatMessages"
-// import { supabase } from "@/lib/supabase"
-import { useSupabase } from "@/providers/SupabaseProvider"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import Image from "next/image"
-import { Mic, Video, ImageIcon, MapPin } from "lucide-react"
-import LocationPreview from "./LocationPreview"
+import { useEffect, useRef, useState } from "react";
+import { useChatMessages } from "@/hooks/useChatMessages";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { Mic, Video, ImageIcon, MapPin } from "lucide-react";
+import LocationPreview from "./LocationPreview";
 
 type ChatWindowProps = {
-    childId: string
-    childName?: string
-    avatarUrl?: string
-    isOnline?: boolean
-}
+    childId: string;
+    childName?: string;
+    avatarUrl?: string;
+    isOnline?: boolean;
+};
 
-export default function ChatWindow({ childId, childName, avatarUrl, isOnline }: ChatWindowProps) {
-    const [newMessage, setNewMessage] = useState("")
-    const [parentId, setParentId] = useState<string | null>(null)
-    const { messages, loading, sendMessage } = useChatMessages(childId)
-    const scrollRef = useRef<HTMLDivElement>(null)
-    const [isRecording, setIsRecording] = useState(false)
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-    const chunksRef = useRef<BlobPart[]>([])
-    const supabase = useSupabase();
+export default function ChatWindow({
+    childId,
+    childName,
+    avatarUrl,
+    isOnline,
+}: ChatWindowProps) {
+    const [newMessage, setNewMessage] = useState("");
+    const [parentId, setParentId] = useState<string | null>(null);
+    const { messages, loading, sendMessage } = useChatMessages(childId);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<BlobPart[]>([]);
+
+    // ✅ Ambil session & client dari provider
+    const { supabase, session } = useSupabase();
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            setParentId(data.user?.id ?? null)
-        })
-    }, [])
+        if (session?.user) {
+            setParentId(session.user.id);
+        } else {
+            // fallback check user jika session belum ready
+            supabase.auth.getUser().then(({ data }) => {
+                setParentId(data.user?.id ?? null);
+            });
+        }
+    }, [session, supabase]);
 
     useEffect(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-    }, [messages])
+        scrollRef.current?.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth",
+        });
+    }, [messages]);
 
     const handleSend = async () => {
-        if (!newMessage.trim() || !parentId) return
-        await sendMessage(newMessage, "parent", parentId)
-        setNewMessage("")
-    }
+        if (!newMessage.trim() || !parentId) return;
+        await sendMessage(newMessage, "parent", parentId);
+        setNewMessage("");
+    };
 
-    // Upload File ke Supabase Storage
+    // ✅ Upload File ke Supabase Storage
     const handleFileUpload = async (file: File) => {
-        if (!parentId) return
+        if (!parentId) return;
 
-        const fileExt = file.name.split(".").pop()
-        const filePath = `chat/${parentId}/${Date.now()}-${Math.random()}.${fileExt}`
+        const fileExt = file.name.split(".").pop();
+        const filePath = `chat/${parentId}/${Date.now()}-${Math.random()}.${fileExt}`;
 
-        const { error } = await supabase.storage.from("chat-files").upload(filePath, file)
+        const { error } = await supabase.storage
+            .from("chat-files")
+            .upload(filePath, file);
+
         if (error) {
-            console.error("Upload error", error.message)
-            return
+            console.error("Upload error", error.message);
+            return;
         }
 
-        const { data } = supabase.storage.from("chat-files").getPublicUrl(filePath)
+        const { data } = supabase.storage.from("chat-files").getPublicUrl(filePath);
 
-        console.log(data.publicUrl);
         if (data.publicUrl) {
             const type = file.type.startsWith("image")
                 ? "image"
@@ -69,7 +85,7 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline }: 
                     ? "video"
                     : file.type.startsWith("audio")
                         ? "audio"
-                        : "document"
+                        : "document";
 
             await supabase.from("chat_messages").insert({
                 child_id: childId,
@@ -78,11 +94,10 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline }: 
                 message: "",
                 file_url: data.publicUrl,
                 file_type: type,
-                file_name: file.name
-            })
-
+                file_name: file.name,
+            });
         }
-    }
+    };
 
     const handleRecordAudio = async () => {
         if (isRecording) return

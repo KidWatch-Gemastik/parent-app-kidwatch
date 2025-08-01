@@ -1,16 +1,17 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useSupabase } from "@/providers/SupabaseProvider"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { cn } from "@/lib/utils";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
-    const supabase = useSupabase();
-    const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
+    const { supabase } = useSupabase(); // ✅ ambil supabase client
+    const [status, setStatus] = useState<"processing" | "success" | "error">(
+        "processing"
+    );
     const [message, setMessage] = useState("Memproses login...");
 
     useEffect(() => {

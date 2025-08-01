@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 import {
     MapPin,
     PhoneCall,
@@ -41,21 +41,18 @@ export default function DashboardPage() {
     const { children: fetchedChildren, isLoading: loadingChildren } = useChildren(user?.id || null);
     const [selectedChild, setSelectedChild] = useState<Child | null>(null);
 
-    // Redirect ke login jika tidak ada user
     useEffect(() => {
         if (!user && !loadingChildren) {
             router.replace("/login");
         }
     }, [user, loadingChildren, router]);
 
-    // Set default child setelah data anak di-load
     useEffect(() => {
         if (!loadingChildren && fetchedChildren.length > 0 && !selectedChild) {
             setSelectedChild(fetchedChildren[0]);
         }
     }, [fetchedChildren, loadingChildren, selectedChild]);
 
-    // Loading UI
     if (!user || loadingChildren) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
