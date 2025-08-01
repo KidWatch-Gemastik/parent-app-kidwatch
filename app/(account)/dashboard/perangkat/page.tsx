@@ -55,10 +55,10 @@ export default function ChildPage() {
 
         if (freshChildren.length > 0) {
             setChildren(freshChildren);
-        } else if (children.length === 0) {
-            setIsLoading(false);
         }
+        setIsLoading(false);
     }, [freshChildren, session]);
+
 
     const handleAddChild = async (child: Omit<Child, "id">) => {
         if (!session) return;
