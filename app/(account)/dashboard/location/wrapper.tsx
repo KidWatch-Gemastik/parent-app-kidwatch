@@ -7,7 +7,7 @@ import DashboardHeader from "@/components/layouts/DashboardHeader";
 import { ChildLocationPage as ChildLocationClient } from "./components/child-location-page";
 import { useChildrenLocations } from "@/hooks/useChildrenLocations";
 import type { Child } from "@/types";
-import { supabaseBrowserClient } from "@/lib/supabase/client"; // ✅ Import instance
+import { supabaseBrowserClient } from "@/lib/supabase/client"; 
 
 export default function ChildLocationPageWrapper() {
     const { session } = useSupabase();
@@ -20,7 +20,6 @@ export default function ChildLocationPageWrapper() {
         const fetchInitialData = async () => {
             if (!userId) return;
 
-            // ✅ gunakan supabaseBrowserClient langsung
             const { data: childrenData } = await supabaseBrowserClient
                 .from("children")
                 .select("id, name, date_of_birth, sex")
@@ -36,7 +35,6 @@ export default function ChildLocationPageWrapper() {
                 .in("child_id", childIds)
                 .order("timestamp", { ascending: false });
 
-            // ✅ Typing Child agar tidak any
             const mappedChildren: Child[] = childrenData.map((child: any) => {
                 const latestLoc = locationsData?.find((loc) => loc.child_id === child.id);
                 return {
