@@ -1,85 +1,77 @@
-"use client"
-import { useEffect, useState } from "react"
-import { useChildren } from "@/hooks/useChildren"
-import type { Child } from "@/types"
-import { getAgeFromDate } from "@/lib/function"
-import { cn } from "@/lib/utils"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { MapPin, Users, Sparkles, LocateFixed, Satellite, Compass, Plus, Loader2 } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { fetchLatestLocation } from "../utils/ChildLocationPage"
-import { formatDistanceToNow } from "date-fns"
-import { id } from "date-fns/locale"
+"use client";
 
+import { useEffect, useState } from "react";
+import { useChildren } from "@/hooks/useChildren";
+import type { Child } from "@/types";
+import { getAgeFromDate } from "@/lib/function";
+import { cn } from "@/lib/utils";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+    MapPin,
+    Users,
+    Sparkles,
+    LocateFixed,
+    Satellite,
+    Compass,
+    Plus,
+    Loader2,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { fetchLatestLocation } from "../utils/ChildLocationPage";
+import { formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
 
 type Props = {
-    initialChildren: Child[]
-    userId?: string
-}
+    initialChildren: Child[];
+    userId?: string;
+    isLoading?: boolean;
+};
 
-export function ChildLocationPage({ initialChildren, userId }: Props) {
-    console.log('USER', userId)
+export function ChildLocationPage({ initialChildren, userId, isLoading }: Props) {
+    const router = useRouter();
+    const { children: refreshedChildren, isLoading: isLoadingChildren } = useChildren(userId || null);
 
-    const router = useRouter()
-    const { children: refreshedChildren, isLoading: isLoadingChildren } = useChildren(userId || null)
-    const [children, setChildren] = useState<Child[]>(initialChildren)
-    const [selectedChild, setSelectedChild] = useState<Child | null>(initialChildren[0] || null)
-    const [isRequestingLocation, setIsRequestingLocation] = useState(false)
+    const [children, setChildren] = useState<Child[]>(initialChildren);
+    const [selectedChild, setSelectedChild] = useState<Child | null>(initialChildren[0] || null);
+    const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
+    // Sync dengan data realtime
     useEffect(() => {
-        if (!isLoadingChildren) {
-            if (refreshedChildren.length > 0) {
-                setChildren((prev) => {
-                    return prev.map((child) => {
-                        const refreshed = refreshedChildren.find((c) => c.id === child.id)
-                        return refreshed ? { ...child, ...refreshed } : child
-                    })
+        if (!isLoadingChildren && refreshedChildren.length > 0) {
+            setChildren((prev) =>
+                prev.map((child) => {
+                    const refreshed = refreshedChildren.find((c) => c.id === child.id);
+                    return refreshed ? { ...child, ...refreshed } : child;
                 })
-            }
+            );
         }
-    }, [refreshedChildren, isLoadingChildren])
+    }, [refreshedChildren, isLoadingChildren]);
 
-    console.log("🎯 Rendered selectedChild:", selectedChild)
-
-
-    // const handleRequestLocation = async () => {
-    //     if (!selectedChild) return
-
-    //     setIsRequestingLocation(true)
-
-    //     const latestLoc = await fetchLatestLocation(selectedChild.id)
-
-    //     if (latestLoc) {
-    //         setSelectedChild((prev) =>
-    //             prev
-    //                 ? {
-    //                     ...prev,
-    //                     location: `${latestLoc.latitude.toFixed(4)}, ${latestLoc.longitude.toFixed(4)}`,
-    //                     gpsAccuracy: `${latestLoc.accuracy} meter`,
-    //                     lastSeen: new Date(latestLoc.timestamp).toLocaleString("id-ID"),
-    //                     safeZoneStatus: Math.random() > 0.5 ? "Di dalam zona aman" : "Di luar zona aman", // nanti diganti geofence asli
-    //                     status: "online",
-    //                 }
-    //                 : null,
-    //         )
-    //     }
-
-    //     setIsRequestingLocation(false)
-    // }
+    // Update selectedChild otomatis jika kosong dan children berubah
+    useEffect(() => {
+        if (!selectedChild && children.length > 0) {
+            setSelectedChild(children[0]);
+        }
+    }, [children, selectedChild]);
 
     const handleRefreshLocation = async (childId: string) => {
-        if (!userId || !selectedChild) return
+        if (!userId || !selectedChild) return;
 
-        setIsRequestingLocation(true)
-
-        const latestLoc = await fetchLatestLocation(childId)
+        setIsRequestingLocation(true);
+        const latestLoc = await fetchLatestLocation(childId);
 
         if (!latestLoc) {
-            console.warn("⚠️ No latest location found or fetch error.")
-            setIsRequestingLocation(false)
-            return
+            console.warn("⚠️ No latest location found or fetch error.");
+            setIsRequestingLocation(false);
+            return;
         }
 
         const updatedChild: Child = {
@@ -89,20 +81,15 @@ export function ChildLocationPage({ initialChildren, userId }: Props) {
             lastSeen: new Date(latestLoc.timestamp).toLocaleString("id-ID"),
             safeZoneStatus: Math.random() > 0.5 ? "Di dalam zona aman" : "Di luar zona aman",
             status: "online",
-        }
+        };
 
-        console.log("✅ Updated child with new location:", updatedChild)
+        setChildren((prev) => prev.map((child) => (child.id === updatedChild.id ? updatedChild : child)));
+        setSelectedChild(updatedChild);
+        setIsRequestingLocation(false);
+    };
 
-        setChildren((prev) =>
-            prev.map((child) =>
-                child.id === updatedChild.id ? updatedChild : child
-            )
-        )
-
-        setSelectedChild(updatedChild)
-        setIsRequestingLocation(false)
-    }
-
+    // --- UI ---
+    const loadingState = isLoading || isLoadingChildren;
 
     return (
         <div className="space-y-8">
@@ -120,7 +107,8 @@ export function ChildLocationPage({ initialChildren, userId }: Props) {
                         </div>
                     </div>
                 </div>
-                {isLoadingChildren ? (
+
+                {loadingState ? (
                     <div className="flex space-x-4 overflow-x-auto pb-2 animate-pulse">
                         {Array.from({ length: 3 }).map((_, i) => (
                             <Card
@@ -153,12 +141,14 @@ export function ChildLocationPage({ initialChildren, userId }: Props) {
                             >
                                 <CardContent className="p-4 flex items-center space-x-4">
                                     <Avatar className="w-12 h-12 ring-2 ring-emerald-500/30">
-                                        <AvatarImage src={
-                                            child.sex === "Laki-laki"
-                                                ? `https://api.dicebear.com/7.x/micah/svg?seed=${encodeURIComponent(child.name)}`
-                                                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(child.name)}`
-                                        }
-                                            alt={child.name} />
+                                        <AvatarImage
+                                            src={
+                                                child.sex === "Laki-laki"
+                                                    ? `https://api.dicebear.com/7.x/micah/svg?seed=${encodeURIComponent(child.name)}`
+                                                    : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(child.name)}`
+                                            }
+                                            alt={child.name}
+                                        />
                                         <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white font-bold">
                                             {child.name[0]}
                                         </AvatarFallback>

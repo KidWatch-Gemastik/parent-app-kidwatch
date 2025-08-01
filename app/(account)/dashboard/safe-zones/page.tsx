@@ -1,25 +1,71 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import DashboardSidebar from "@/components/layouts/dashboardSidebar";
 import DashboardHeader from "@/components/layouts/DashboardHeader";
-import { fetchChildrenForSafeZones, fetchSafeZones } from "@/lib/actions/safeZones";
+import { useSupabase } from "@/providers/SupabaseProvider";
 import { SafeZonesPageClient } from "./components/client";
 
-export default async function SafeZonesPage() {
-    const supabase = createServerComponentClient({ cookies });
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
+import type { SafeZone, Child } from "@/types";
 
-    if (!session) redirect("/login");
+export default function SafeZonesPage() {
+    const { session, supabase } = useSupabase();
+    const router = useRouter();
 
-    const [initialSafeZones, childrenList] = await Promise.all([
-        fetchSafeZones(),
-        fetchChildrenForSafeZones(),
-    ]);
+    const [isClient, setIsClient] = useState(false);
+    const [initialSafeZones, setInitialSafeZones] = useState<SafeZone[]>([]);
+    const [childrenList, setChildrenList] = useState<Child[]>([]);
+    const [loadingData, setLoadingData] = useState(true);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (isClient && !session) {
+            router.replace("/login");
+        }
+    }, [isClient, session, router]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!session) return;
+
+            setLoadingData(true);
+
+            const { data: zonesData, error: zonesError } = await supabase
+                .from("safe_zones")
+                .select("*")
+                .eq("parent_id", session.user.id);
+
+            const { data: childrenData, error: childrenError } = await supabase
+                .from("children")
+                .select("*")
+                .eq("parent_id", session.user.id);
+
+            if (!zonesError && zonesData) {
+                setInitialSafeZones(zonesData as SafeZone[]);
+            }
+
+            if (!childrenError && childrenData) {
+                setChildrenList(childrenData as Child[]);
+            }
+
+            setLoadingData(false);
+        };
+
+        if (session) fetchData();
+    }, [session, supabase]);
+
+    if (!isClient || !session) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-white">
+                Memuat...
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
@@ -52,10 +98,16 @@ export default async function SafeZonesPage() {
                             </div>
                         }
                     >
-                        <SafeZonesPageClient
-                            initialSafeZones={initialSafeZones}
-                            childrenList={childrenList}
-                        />
+                        {!loadingData ? (
+                            <SafeZonesPageClient
+                                initialSafeZones={initialSafeZones}
+                                childrenList={childrenList}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center py-20 text-white">
+                                Memuat data zona aman...
+                            </div>
+                        )}
                     </Suspense>
                 </main>
             </div>

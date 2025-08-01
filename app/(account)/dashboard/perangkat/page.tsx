@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Plus, Users, Sparkles } from "lucide-react";
@@ -14,60 +14,34 @@ import { EditChildModal } from "./components/EditChildModal";
 import { DeleteChildModal } from "./components/DeleteChildModal";
 
 import type { Child } from "@/types";
-import { fetchChildrenFromServer } from "@/lib/actions/fetchChildren";
 import { useChildren } from "@/hooks/useChildren";
 import { useSupabase } from "@/providers/SupabaseProvider";
 
 export default function ChildPage() {
     const router = useRouter();
-    const initRef = useRef(false);
-
     const { session, supabase } = useSupabase();
-    const [children, setChildren] = useState<Child[]>([]);
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    const { children: freshChildren } = useChildren(session?.user.id || null);
+    const { children, isLoading } = useChildren(session?.user.id || null);
 
-    // Ambil snapshot server di awal
-    useEffect(() => {
-        if (initRef.current) return;
-        initRef.current = true;
+    if (!session) {
+        router.replace("/login");
+        return (
+            <div className="flex items-center justify-center min-h-screen text-white">
+                Memuat...
+            </div>
+        );
+    }
 
-        const init = async () => {
-            if (!session) {
-                router.replace("/login");
-                return;
-            }
-
-            const serverData = await fetchChildrenFromServer();
-            setChildren(serverData);
-            setIsLoading(false);
-        };
-
-        init();
-    }, [router, session]);
-
-    // Update dari realtime, tapi jangan kosongkan state
-    useEffect(() => {
-        if (!session) return;
-
-        // Hanya timpa state kalau ada data baru
-        if (freshChildren.length > 0) {
-            setChildren(freshChildren);
-            setIsLoading(false);
-        }
-    }, [freshChildren, session]);
-
-    // --- CRUD Handlers ---
     const handleAddChild = async (child: Omit<Child, "id">) => {
         if (!session) return;
         const qr = uuidv4();
 
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("children")
             .insert({
                 parent_id: session.user.id,
@@ -75,16 +49,13 @@ export default function ChildPage() {
                 date_of_birth: child.date_of_birth,
                 sex: child.sex,
                 qr_code: qr,
-            })
-            .select()
-            .single();
+            });
 
         if (error) {
             console.error("Gagal menambahkan anak:", error);
             return;
         }
 
-        setChildren((prev) => [...prev, { ...child, id: data.id, qr_code: data.qr_code }]);
         setIsAddModalOpen(false);
     };
 
@@ -106,7 +77,6 @@ export default function ChildPage() {
             return;
         }
 
-        setChildren((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         setIsEditModalOpen(false);
         setSelectedChild(null);
     };
@@ -125,7 +95,6 @@ export default function ChildPage() {
             return;
         }
 
-        setChildren((prev) => prev.filter((c) => c.id !== childId));
         setIsDeleteModalOpen(false);
         setSelectedChild(null);
     };
