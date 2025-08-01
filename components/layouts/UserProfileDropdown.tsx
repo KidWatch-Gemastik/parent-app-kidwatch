@@ -25,12 +25,13 @@ import {
     LogOut,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession"
 import Image from "next/image"
 
 export default function UserProfileDropdown() {
     const { user } = useSupabaseAuthSession()
+    const supabase = createClientComponentClient()
     const router = useRouter()
 
     const name = user?.user_metadata.full_name || user?.user_metadata.name || "User"
@@ -39,7 +40,7 @@ export default function UserProfileDropdown() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
-        router.replace("/login")
+        router.push("/login")
     }
 
     console.log(avatar)
@@ -93,7 +94,7 @@ export default function UserProfileDropdown() {
                     Invite People
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => router.replace('/preferences')}>
+                <DropdownMenuItem onClick={() => router.push('/preferences')}>
                     <Settings2 className="mr-2 h-4 w-4" />
                     Preferences
                 </DropdownMenuItem>
