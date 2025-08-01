@@ -43,7 +43,7 @@ interface NavbarProps {
 
 export default function Navbar({
   logo = <LaunchUI />,
-  name = "Launch UI",
+  name = "KiddyGoo",
   homeUrl = "/",
   showNavigation = true,
   customNavigation,
