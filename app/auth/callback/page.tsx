@@ -22,27 +22,28 @@ export default function AuthCallbackPage() {
             const access_token = params.get("access_token")
             const refresh_token = params.get("refresh_token")
 
-            // Tidak ada token
+            // Jika token tidak ada
             if (!access_token || !refresh_token) {
                 setStatus("error")
                 setMessage("Token tidak valid. Mengarahkan...")
-                setTimeout(() => router.replace("/login?error=invalid_or_expired"), 2000)
+                setTimeout(() => {
+                    if (!executedRef.current) return
+                    router.push("/login?error=invalid_or_expired")
+                }, 2000)
                 return
             }
 
             setMessage("Mengatur sesi...")
 
-            // Set session
-            const { error } = await supabaseAuth.auth.setSession({
-                access_token,
-                refresh_token,
-            })
-
+            const { error } = await supabaseAuth.auth.setSession({ access_token, refresh_token })
             if (error) {
                 console.error("Failed to set session", error)
                 setStatus("error")
                 setMessage("Gagal masuk. Mencoba lagi...")
-                setTimeout(() => router.replace("/login?error=invalid_or_expired"), 2000)
+                setTimeout(() => {
+                    if (!executedRef.current) return
+                    router.push("/login?error=invalid_or_expired")
+                }, 2000)
                 return
             }
 
@@ -50,18 +51,28 @@ export default function AuthCallbackPage() {
             if (!data.session) {
                 setStatus("error")
                 setMessage("Sesi gagal dibuat. Mengarahkan...")
-                setTimeout(() => router.replace("/login?error=session_failed"), 2000)
+                setTimeout(() => {
+                    if (!executedRef.current) return
+                    router.push("/login?error=session_failed")
+                }, 2000)
                 return
             }
 
-            // Jika sukses
             setStatus("success")
             setMessage("Berhasil masuk! Mengarahkan...")
-            setTimeout(() => router.replace("/dashboard"), 1500)
+            setTimeout(() => {
+                if (!executedRef.current) return
+                router.push("/dashboard")
+            }, 1500)
         }
 
         handleAuthCallback()
+
+        return () => {
+            executedRef.current = false
+        }
     }, [router])
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative overflow-hidden">
