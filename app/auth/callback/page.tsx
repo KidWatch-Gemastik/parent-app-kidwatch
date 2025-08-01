@@ -1,54 +1,66 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabaseAuth } from "@/lib/supabase-auth"
 import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import * as React from 'react'
 
 export default function AuthCallbackPage() {
     const router = useRouter()
-    const [status, setStatus] = useState<"processing" | "success" | "error">("processing")
-    const [message, setMessage] = useState("Memproses login...")
+    const [status, setStatus] = React.useState<"processing" | "success" | "error">("processing")
+    const [message, setMessage] = React.useState("Memproses login...")
+    const executedRef = React.useRef(false)
 
-    useEffect(() => {
-        const hash = window.location.hash.substring(1)
-        const params = new URLSearchParams(hash)
-        const access_token = params.get("access_token")
-        const refresh_token = params.get("refresh_token")
+    React.useEffect(() => {
+        if (executedRef.current) return
+        executedRef.current = true
 
-        if (access_token && refresh_token) {
+        const handleAuthCallback = async () => {
+            const hash = window.location.hash.substring(1)
+            const params = new URLSearchParams(hash)
+            const access_token = params.get("access_token")
+            const refresh_token = params.get("refresh_token")
+
+            // Tidak ada token
+            if (!access_token || !refresh_token) {
+                setStatus("error")
+                setMessage("Token tidak valid. Mengarahkan...")
+                setTimeout(() => router.replace("/login?error=invalid_or_expired"), 2000)
+                return
+            }
 
             setMessage("Mengatur sesi...")
 
-            supabaseAuth.auth
-                .setSession({
-                    access_token,
-                    refresh_token,
-                })
-                .then(({ error }) => {
-                    if (error) {
-                        console.error("Failed to set session", error)
-                        setStatus("error")
-                        setMessage("Gagal masuk. Mencoba lagi...")
-                        setTimeout(() => {
-                            router.replace("/login?error=invalid_or_expired")
-                        }, 2000)
-                    } else {
-                        setStatus("success")
-                        setMessage("Berhasil masuk! Mengarahkan...")
-                        setTimeout(() => {
-                            router.replace("/dashboard")
-                        }, 1500)
-                    }
-                })
-        } else {
-            setStatus("error")
-            setMessage("Token tidak valid. Mengarahkan...")
-            setTimeout(() => {
-                router.replace("/login?error=invalid_or_expired")
-            }, 2000)
+            // Set session
+            const { error } = await supabaseAuth.auth.setSession({
+                access_token,
+                refresh_token,
+            })
+
+            if (error) {
+                console.error("Failed to set session", error)
+                setStatus("error")
+                setMessage("Gagal masuk. Mencoba lagi...")
+                setTimeout(() => router.replace("/login?error=invalid_or_expired"), 2000)
+                return
+            }
+
+            const { data } = await supabaseAuth.auth.getSession()
+            if (!data.session) {
+                setStatus("error")
+                setMessage("Sesi gagal dibuat. Mengarahkan...")
+                setTimeout(() => router.replace("/login?error=session_failed"), 2000)
+                return
+            }
+
+            // Jika sukses
+            setStatus("success")
+            setMessage("Berhasil masuk! Mengarahkan...")
+            setTimeout(() => router.replace("/dashboard"), 1500)
         }
+
+        handleAuthCallback()
     }, [router])
 
     return (
