@@ -19,7 +19,6 @@ import { ModeToggle } from "@/components/theme-toogle";
 
 import { guestLinks, authLinks, type NavbarLink } from "@/types/links";
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession";
-import { supabase } from "@/lib/supabase";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +30,7 @@ import {
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import Image from "next/image";
 import { DashboardIcon } from "@radix-ui/react-icons";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 interface NavbarProps {
   logo?: ReactNode;
@@ -50,6 +50,7 @@ export default function Navbar({
   className,
 }: NavbarProps) {
   const { session, provider } = useSupabaseAuthSession();
+  const supabase = createClientComponentClient()
   const user = session?.user;
   const router = useRouter();
 
