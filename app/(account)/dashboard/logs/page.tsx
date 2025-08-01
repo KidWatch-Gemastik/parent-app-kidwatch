@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/supabase"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -36,7 +36,6 @@ export default function CallLogsPage() {
     const [logs, setLogs] = useState<CallLog[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedLog, setSelectedLog] = useState<CallLog | null>(null)
-    const supabase = createClientComponentClient()
 
     const fetchLogs = async () => {
         setLoading(true)

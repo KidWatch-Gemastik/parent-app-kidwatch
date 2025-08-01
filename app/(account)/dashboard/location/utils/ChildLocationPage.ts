@@ -1,7 +1,6 @@
 "use client"
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-
+import { supabase } from "@/lib/supabase"
 type Location = {
     latitude: number
     longitude: number
@@ -15,7 +14,6 @@ type Location = {
  * @returns Latest location data or null
  */
 export async function fetchLatestLocation(childId: string): Promise<Location | null> {
-    const supabase = createClientComponentClient()
 
     const { data, error } = await supabase
         .from("locations")

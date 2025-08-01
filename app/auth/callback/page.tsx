@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/supabase"
 import { Shield, CheckCircle, Loader2, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -18,7 +18,6 @@ export default function AuthCallbackPage() {
         const refresh_token = params.get("refresh_token")
 
         if (access_token && refresh_token) {
-            const supabase = createClientComponentClient()
 
             setMessage("Mengatur sesi...")
 

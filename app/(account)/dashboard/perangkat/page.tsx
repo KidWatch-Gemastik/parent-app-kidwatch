@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
 import { Plus, Users, Sparkles } from "lucide-react"
 
@@ -19,7 +19,6 @@ import { fetchChildrenFromServer } from "@/lib/actions/fetchChildren"
 import { useChildren } from "@/hooks/useChildren"
 
 export default function ChildPage() {
-    const supabase = createClientComponentClient()
     const router = useRouter()
     const initRef = useRef(false)
 
@@ -41,7 +40,7 @@ export default function ChildPage() {
         const init = async () => {
             const { data: { session: s } } = await supabase.auth.getSession()
             if (!s) {
-                router.push("/login")
+                router.replace("/login")
                 return
             }
             setSession(s)

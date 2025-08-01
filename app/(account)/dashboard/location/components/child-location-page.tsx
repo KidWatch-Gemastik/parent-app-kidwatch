@@ -185,7 +185,7 @@ export function ChildLocationPage({ initialChildren, userId }: Props) {
                         <p className="text-gray-400">Tidak ada anak terdaftar. Silakan tambahkan anak terlebih dahulu.</p>
                         <Button
                             variant="ghost"
-                            onClick={() => router.push("/perangkat")}
+                            onClick={() => router.replace("/perangkat")}
                             className="mt-4 bg-gradient-to-r from-emerald-500 to-mint-500 text-white hover:from-emerald-600 hover:to-mint-600 rounded-xl shadow-lg hover:shadow-emerald-500/25 px-6 py-3 font-semibold"
                         >
                             <Plus className="w-5 h-5 mr-2" />

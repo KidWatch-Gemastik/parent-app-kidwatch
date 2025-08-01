@@ -97,7 +97,7 @@ export default function RegisterPage() {
             if (error) throw error
 
             showAlert("success", "Silakan cek email Anda untuk konfirmasi akun!")
-            setTimeout(() => router.push("/login"), 2000)
+            setTimeout(() => router.replace("/login"), 2000)
         } catch (err) {
             const error = err as AuthError
             showAlert("error", error?.message || "Terjadi kesalahan saat mendaftar")
@@ -335,7 +335,7 @@ export default function RegisterPage() {
                                     <Link
                                         href='/login'
                                         className="px-0 text-emerald-400 hover:text-emerald-300 text-sm h-auto font-medium transition-colors duration-300"
-                                        onClick={() => router.push("/login")}
+                                        onClick={() => router.replace("/login")}
                                     >
                                         Masuk di sini
                                     </Link>

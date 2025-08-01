@@ -19,7 +19,7 @@ import { ModeToggle } from "@/components/theme-toogle";
 
 import { guestLinks, authLinks, type NavbarLink } from "@/types/links";
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,13 +52,12 @@ export default function Navbar({
   const { session, provider } = useSupabaseAuthSession();
   const user = session?.user;
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const currentLinks: NavbarLink[] = user ? authLinks : guestLinks;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.replace("/login");
   };
 
   // const nameUser = user?.user_metadata.full_name || user?.user_metadata.name;
@@ -102,7 +101,7 @@ export default function Navbar({
                 <DropdownMenuContent>
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                  <DropdownMenuItem onClick={() => router.replace("/dashboard")}>
                     <DashboardIcon className="h-4 w-4" /> Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive" onClick={handleLogout}>

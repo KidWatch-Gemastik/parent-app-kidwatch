@@ -9,7 +9,8 @@ import {
     ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 
 interface ChatEntry {
     role: "user" | "ai";
@@ -26,7 +27,6 @@ interface ChatMedia {
 }
 
 export default function AIAssistant() {
-    const supabase = createClientComponentClient();
 
     const [question, setQuestion] = useState("");
     const [chatHistory, setChatHistory] = useState<ChatEntry[]>([]);
