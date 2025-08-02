@@ -30,9 +30,9 @@ export default function ChatPage() {
 
     useEffect(() => {
         const checkScreen = () => {
-            const mobile = window.innerWidth < 768;
+            const mobile = window.innerWidth < 800;
             setIsMobile(mobile);
-            setShowSidebar(!mobile); // default: sidebar terbuka di desktop, tertutup di mobile
+            setShowSidebar(!mobile);
         };
         checkScreen();
         window.addEventListener("resize", checkScreen);
