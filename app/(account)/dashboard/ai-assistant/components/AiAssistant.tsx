@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Send, Sparkles, ChevronDown, ChevronRight, Menu, X, Mic, ImageIcon, Phone } from "lucide-react"
+import { Loader2, Send, Sparkles, ChevronDown, ChevronRight, Menu, X, ImageIcon, Phone } from "lucide-react"
 import Image from "next/image"
 import { useSupabase } from "@/providers/SupabaseProvider"
 import { Button } from "@/components/ui/button"
@@ -193,7 +193,7 @@ export default function AIAssistant() {
     const renderMedia = (msg: ChatMedia) => {
         const baseClasses = cn(
             "rounded-lg border border-emerald-500/20 object-cover transition-all duration-300 hover:scale-105 cursor-pointer",
-            isMobile ? "w-20 h-20" : "w-24 h-24",
+            isMobile ? "w-16 h-16" : "w-20 h-20",
         )
 
         switch (msg.file_type) {
@@ -201,8 +201,8 @@ export default function AIAssistant() {
                 return (
                     <Image
                         src={msg.file_url || "/placeholder.svg"}
-                        width={isMobile ? 80 : 96}
-                        height={isMobile ? 80 : 96}
+                        width={isMobile ? 64 : 80}
+                        height={isMobile ? 64 : 80}
                         unoptimized
                         alt={msg.file_name || "image"}
                         className={baseClasses}
@@ -213,14 +213,14 @@ export default function AIAssistant() {
             case "audio":
                 return (
                     <div className={cn("flex items-center justify-center bg-gray-800/50", baseClasses)}>
-                        <Phone className="w-6 h-6 text-emerald-400" />
+                        <Phone className={cn("text-emerald-400", isMobile ? "w-4 h-4" : "w-5 h-5")} />
                     </div>
                 )
             case "location":
                 return (
                     <div className={cn("flex items-center justify-center bg-gray-800/50", baseClasses)}>
                         <div className="text-center">
-                            <div className="text-emerald-400 text-lg">📍</div>
+                            <div className={cn("text-emerald-400", isMobile ? "text-sm" : "text-base")}>📍</div>
                             <div className="text-xs text-gray-400">Lokasi</div>
                         </div>
                     </div>
@@ -229,7 +229,7 @@ export default function AIAssistant() {
                 return (
                     <div className={cn("flex items-center justify-center bg-gray-800/50", baseClasses)}>
                         <div className="text-center">
-                            <div className="text-emerald-400 text-lg">📄</div>
+                            <div className={cn("text-emerald-400", isMobile ? "text-sm" : "text-base")}>📄</div>
                             <div className="text-xs text-gray-400">File</div>
                         </div>
                     </div>
@@ -243,7 +243,7 @@ export default function AIAssistant() {
         // Auto-resize textarea
         const textarea = e.target
         textarea.style.height = "auto"
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px"
+        textarea.style.height = Math.min(textarea.scrollHeight, isMobile ? 100 : 120) + "px"
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -256,8 +256,14 @@ export default function AIAssistant() {
     return (
         <div className="h-full flex relative bg-transparent">
             {/* Mobile Overlay */}
-            {isMobile && showSidebar && (
-                <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSidebar(false)} />
+            {isMobile && (showSidebar || showMediaPanel) && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40"
+                    onClick={() => {
+                        setShowSidebar(false)
+                        setShowMediaPanel(false)
+                    }}
+                />
             )}
 
             {/* Sidebar */}
@@ -271,9 +277,9 @@ export default function AIAssistant() {
                 )}
             >
                 {/* Sidebar Header */}
-                <div className="flex items-center justify-between p-4 border-b border-emerald-500/20 shrink-0">
-                    <h2 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5" />
+                <div className="flex items-center justify-between p-3 md:p-4 border-b border-emerald-500/20 shrink-0">
+                    <h2 className="text-base md:text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                         Riwayat Chat
                     </h2>
                     {isMobile && (
@@ -289,21 +295,21 @@ export default function AIAssistant() {
                 </div>
 
                 {/* Chat History */}
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 p-3 md:p-4">
                     {Object.keys(groupedHistory).length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                                <Sparkles className="w-8 h-8 text-emerald-400" />
+                        <div className="text-center py-6 md:py-8">
+                            <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-emerald-400" />
                             </div>
                             <p className="text-gray-400 text-sm">Belum ada percakapan.</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2 md:space-y-3">
                             {Object.entries(groupedHistory).map(([date, chats]) => {
                                 const isCollapsed = collapsed[date]
                                 return (
                                     <Card key={date} className="border border-emerald-500/20 bg-gray-800/50">
-                                        <CardHeader className="pb-2">
+                                        <CardHeader className="pb-2 p-3">
                                             <button
                                                 onClick={() => setCollapsed((prev) => ({ ...prev, [date]: !isCollapsed }))}
                                                 className="flex items-center justify-between w-full text-left hover:text-emerald-400 transition-colors"
@@ -322,7 +328,7 @@ export default function AIAssistant() {
                                             </button>
                                         </CardHeader>
                                         {!isCollapsed && (
-                                            <CardContent className="pt-0">
+                                            <CardContent className="pt-0 p-3">
                                                 <div className="space-y-2">
                                                     {chats.map((c, i) => (
                                                         <div
@@ -339,8 +345,8 @@ export default function AIAssistant() {
                                                             <div className="flex items-start gap-2">
                                                                 <span className="text-emerald-400 shrink-0">{c.role === "user" ? "🧑" : "🤖"}</span>
                                                                 <span className="line-clamp-2 leading-relaxed">
-                                                                    {c.message.slice(0, 60)}
-                                                                    {c.message.length > 60 && "..."}
+                                                                    {c.message.slice(0, isMobile ? 50 : 60)}
+                                                                    {c.message.length > (isMobile ? 50 : 60) && "..."}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -359,9 +365,9 @@ export default function AIAssistant() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
-                <header className="border-b border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-4 shrink-0">
+                <header className="border-b border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-3 md:p-4 shrink-0">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                             {isMobile && (
                                 <Button
                                     variant="ghost"
@@ -373,18 +379,16 @@ export default function AIAssistant() {
                                 </Button>
                             )}
                             <div>
-                                <h1
-                                    className={cn("font-bold text-emerald-400 flex items-center gap-2", isMobile ? "text-lg" : "text-xl")}
-                                >
-                                    <Sparkles className={cn("text-emerald-400", isMobile ? "w-5 h-5" : "w-6 h-6")} />
+                                <h1 className="text-base md:text-xl font-bold text-emerald-400 flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-emerald-400" />
                                     AI Assistant
                                 </h1>
-                                <p className="text-sm text-gray-400">Monitoring Anak Cerdas</p>
+                                <p className="text-xs md:text-sm text-gray-400">Monitoring Anak Cerdas</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-1 md:mr-2 animate-pulse"></div>
                                 Online
                             </Badge>
                             {chatMedia.length > 0 && (
@@ -404,28 +408,30 @@ export default function AIAssistant() {
                 {/* Chat Area */}
                 <div className="flex-1 flex flex-col min-h-0">
                     {/* Messages */}
-                    <ScrollArea className="flex-1 p-4">
-                        <div className="max-w-4xl mx-auto space-y-4">
+                    <ScrollArea className="flex-1 p-3 md:p-4">
+                        <div className="max-w-4xl mx-auto space-y-3 md:space-y-4">
                             {chatHistory.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-20 h-20 mx-auto mb-6 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                                        <Sparkles className="w-10 h-10 text-emerald-400 animate-pulse" />
+                                <div className="text-center py-8 md:py-12">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 md:mb-6 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-emerald-400 animate-pulse" />
                                     </div>
-                                    <h3 className={cn("font-semibold text-white mb-2", isMobile ? "text-lg" : "text-xl")}>
+                                    <h3 className="text-lg md:text-xl font-semibold text-white mb-2">
                                         Selamat datang di AI Assistant! 👋
                                     </h3>
-                                    <p className="text-gray-400 mb-6">Tanyakan sesuatu tentang aktivitas dan keamanan anak Anda</p>
-                                    <div className={cn("grid gap-3 max-w-2xl mx-auto", isMobile ? "grid-cols-1" : "grid-cols-2")}>
+                                    <p className="text-gray-400 mb-4 md:mb-6 text-sm md:text-base px-4">
+                                        Tanyakan sesuatu tentang aktivitas dan keamanan anak Anda
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 max-w-2xl mx-auto px-4">
                                         {quickActions.map((action, index) => (
                                             <Button
                                                 key={index}
                                                 variant="outline"
                                                 onClick={() => askAI(action)}
                                                 disabled={loading}
-                                                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 bg-transparent text-left justify-start h-auto p-4"
+                                                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 bg-transparent text-left justify-start h-auto p-3 md:p-4"
                                             >
-                                                <span className="text-emerald-400 mr-3">💡</span>
-                                                <span className="text-sm">{action}</span>
+                                                <span className="text-emerald-400 mr-2 md:mr-3">💡</span>
+                                                <span className="text-xs md:text-sm">{action}</span>
                                             </Button>
                                         ))}
                                     </div>
@@ -435,18 +441,18 @@ export default function AIAssistant() {
                                     <div key={i} className={cn("flex", chat.role === "user" ? "justify-end" : "justify-start")}>
                                         <div
                                             className={cn(
-                                                "px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-lg backdrop-blur-sm",
-                                                isMobile ? "max-w-[85%]" : "max-w-[75%]",
+                                                "px-3 py-2 md:px-4 md:py-3 rounded-2xl whitespace-pre-wrap shadow-lg backdrop-blur-sm",
+                                                "max-w-[90%] md:max-w-[75%]",
                                                 chat.role === "user"
                                                     ? "bg-emerald-500/20 text-white border border-emerald-500/30 rounded-br-none"
                                                     : "bg-gray-800/80 text-gray-200 border border-gray-700/50 rounded-bl-none",
                                             )}
                                         >
-                                            {chat.message}
+                                            <div className="text-sm md:text-base">{chat.message}</div>
                                             {chat.message.startsWith("⏳") && (
                                                 <Loader2 className="inline ml-2 w-4 h-4 animate-spin text-emerald-400" />
                                             )}
-                                            <div className="text-xs opacity-60 mt-2">
+                                            <div className="text-xs opacity-60 mt-1 md:mt-2">
                                                 {new Date(chat.timestamp).toLocaleTimeString("id-ID", {
                                                     hour: "2-digit",
                                                     minute: "2-digit",
@@ -462,7 +468,7 @@ export default function AIAssistant() {
 
                     {/* Quick Actions (when chat exists) */}
                     {chatHistory.length > 0 && (
-                        <div className="border-t border-emerald-500/20 bg-gray-900/50 p-4 shrink-0">
+                        <div className="border-t border-emerald-500/20 bg-gray-900/50 p-3 md:p-4 shrink-0">
                             <div className="max-w-4xl mx-auto">
                                 <div className="flex flex-wrap gap-2">
                                     {quickActions.map((q, index) => (
@@ -474,7 +480,7 @@ export default function AIAssistant() {
                                             disabled={loading}
                                             className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 bg-transparent text-xs"
                                         >
-                                            {q}
+                                            {isMobile ? q.slice(0, 20) + "..." : q}
                                         </Button>
                                     ))}
                                 </div>
@@ -483,11 +489,9 @@ export default function AIAssistant() {
                     )}
 
                     {/* Input Area */}
-                    <div className="border-t border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-4 shrink-0">
+                    <div className="border-t border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-3 md:p-4 shrink-0">
                         <div className="max-w-4xl mx-auto">
-                            <div className="flex gap-3 items-end">
-                                
-
+                            <div className="flex gap-2 md:gap-3 items-end">
                                 {/* Text Input */}
                                 <div className="flex-1 relative">
                                     <textarea
@@ -497,12 +501,12 @@ export default function AIAssistant() {
                                         onKeyPress={handleKeyPress}
                                         placeholder="Tanyakan sesuatu tentang anak Anda..."
                                         className={cn(
-                                            "w-full p-3 pr-16 rounded-xl bg-gray-800/80 text-white border border-emerald-500/20 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-200",
-                                            isMobile ? "text-sm min-h-[40px]" : "text-base min-h-[48px]",
+                                            "w-full p-3 pr-12 md:pr-16 rounded-xl bg-gray-800/80 text-white border border-emerald-500/20 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-200",
+                                            "text-sm md:text-base min-h-[40px] md:min-h-[48px]",
                                         )}
                                         rows={1}
                                         disabled={loading}
-                                        style={{ maxHeight: "120px" }}
+                                        style={{ maxHeight: isMobile ? "100px" : "120px" }}
                                         maxLength={500}
                                     />
                                     {/* Character count */}
@@ -515,13 +519,13 @@ export default function AIAssistant() {
                                     disabled={loading || !question.trim()}
                                     className={cn(
                                         "shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-200 hover:scale-105",
-                                        isMobile ? "h-10 w-10 p-0" : "h-12 w-12 p-0",
+                                        "h-10 w-10 md:h-12 md:w-12 p-0",
                                     )}
                                 >
                                     {loading ? (
-                                        <Loader2 className={cn("animate-spin", isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                        <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
                                     ) : (
-                                        <Send className={cn(isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                        <Send className="w-4 h-4 md:w-5 md:h-5" />
                                     )}
                                 </Button>
                             </div>
@@ -537,7 +541,7 @@ export default function AIAssistant() {
                         "border-l border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl transition-all duration-300 z-40",
                         isMobile
                             ? showMediaPanel
-                                ? "fixed right-0 top-0 bottom-0 w-80 shadow-2xl"
+                                ? "fixed right-0 top-0 bottom-0 w-72 shadow-2xl"
                                 : "w-0 overflow-hidden"
                             : showMediaPanel
                                 ? "w-80"
@@ -545,9 +549,9 @@ export default function AIAssistant() {
                     )}
                 >
                     <div className="flex flex-col h-full">
-                        <div className="flex items-center justify-between p-4 border-b border-emerald-500/20">
-                            <h2 className="font-semibold text-emerald-400 flex items-center gap-2">
-                                <ImageIcon className="w-5 h-5" />
+                        <div className="flex items-center justify-between p-3 md:p-4 border-b border-emerald-500/20">
+                            <h2 className="text-base md:text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
                                 Media Terbaru
                             </h2>
                             <Button
@@ -560,8 +564,8 @@ export default function AIAssistant() {
                             </Button>
                         </div>
 
-                        <ScrollArea className="flex-1 p-4">
-                            <div className="grid grid-cols-2 gap-4">
+                        <ScrollArea className="flex-1 p-3 md:p-4">
+                            <div className="grid grid-cols-2 gap-3 md:gap-4">
                                 {chatMedia.map((msg) => (
                                     <div key={msg.id} className="flex flex-col items-center">
                                         {renderMedia(msg)}
