@@ -181,7 +181,7 @@ export default function DashboardSidebar() {
                         </>
                     ) : (
                         <>
-                            <Link href="/perangkat">
+                            <Link href="/dashboard/perangkat">
                                 <Button
                                     variant="ghost"
                                     className="w-full h-12 justify-start gap-3 px-4 text-mint-400 hover:text-mint-300 hover:bg-mint-500/10 rounded-xl transition-all duration-300 border border-transparent hover:border-mint-500/20 group"

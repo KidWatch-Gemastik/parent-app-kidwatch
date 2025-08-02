@@ -19,18 +19,24 @@ export default function ChatPage() {
     const [selectedChild, setSelectedChild] = useState<string | null>(null);
     const [collapsed, setCollapsed] = useState(false);
     const [search, setSearch] = useState("");
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkScreen = () => setIsMobile(window.innerWidth < 768);
+        checkScreen();
+        window.addEventListener("resize", checkScreen);
+        return () => window.removeEventListener("resize", checkScreen);
+    }, []);
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data } = await supabase.auth.getUser();
             setParentId(data.user?.id ?? null);
         };
-
         fetchUser();
     }, [supabase]);
 
     const { list, loading } = useChatOverview(parentId || "");
-    const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     const showSidebar = !selectedChild || !isMobile;
     const selectedChildData = list.find((c) => c.child_id === selectedChild);
 
@@ -46,8 +52,9 @@ export default function ChatPage() {
             {showSidebar && (
                 <div
                     className={cn(
-                        "border-r border-emerald-500/20 flex flex-col backdrop-blur-xl bg-black/30 transition-all duration-300 relative z-10",
-                        collapsed ? "w-24" : "w-full md:w-80"
+                        "border-r border-emerald-500/20 flex flex-col backdrop-blur-xl bg-black/30 transition-all duration-300 relative z-20",
+                        collapsed ? "w-20" : "w-full md:w-80",
+                        isMobile && "absolute left-0 top-0 bottom-0 h-full w-3/4 max-w-xs shadow-lg"
                     )}
                 >
                     {/* Header */}
@@ -109,8 +116,8 @@ export default function ChatPage() {
                                     <Image
                                         src="/source/chatting-33.svg"
                                         alt="No Child"
-                                        width={180}
-                                        height={180}
+                                        width={140}
+                                        height={140}
                                         className="mb-4 opacity-80"
                                     />
                                     {!collapsed && <p>{search ? "Tidak ada hasil" : "Anak Belum di Hubungkan"}</p>}
@@ -123,13 +130,16 @@ export default function ChatPage() {
                                 {filteredList.map((child) => (
                                     <div
                                         key={child.child_id}
-                                        onClick={() => setSelectedChild(child.child_id)}
+                                        onClick={() => {
+                                            setSelectedChild(child.child_id);
+                                            if (isMobile) setCollapsed(true); // ✅ auto collapse sidebar on mobile
+                                        }}
                                         className={cn(
                                             "flex items-center gap-3 cursor-pointer border-b border-emerald-500/10 transition-all px-4 py-3 hover:bg-emerald-500/5",
                                             selectedChild === child.child_id && "bg-emerald-500/10"
                                         )}
                                     >
-                                        <Avatar className="w-16 h-16 ring-2 ring-emerald-500/30 transition-all duration-300">
+                                        <Avatar className="w-14 h-14 ring-2 ring-emerald-500/30 transition-all duration-300">
                                             <AvatarImage
                                                 src={
                                                     child.sex === "Laki-laki"
@@ -168,7 +178,7 @@ export default function ChatPage() {
 
             {/* Chat Panel */}
             {selectedChild ? (
-                <div className="w-full">
+                <div className="w-full h-full">
                     <ChatWindow
                         childId={selectedChild}
                         childName={selectedChildData?.child_name}
@@ -186,8 +196,8 @@ export default function ChatPage() {
                         <Image
                             src="/source/Chatting-bro.svg"
                             alt="Chatting Illustration"
-                            width={520}
-                            height={220}
+                            width={420}
+                            height={180}
                             className="opacity-90"
                         />
                         <h6 className="text-xl font-semibold text-emerald-200">
