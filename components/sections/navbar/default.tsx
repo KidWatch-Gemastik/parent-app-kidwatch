@@ -30,7 +30,7 @@ import {
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import Image from "next/image";
 import { DashboardIcon } from "@radix-ui/react-icons";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSupabase } from "@/providers/SupabaseProvider"; // ✅ ganti pakai provider
 
 interface NavbarProps {
   logo?: ReactNode;
@@ -50,7 +50,7 @@ export default function Navbar({
   className,
 }: NavbarProps) {
   const { session, provider } = useSupabaseAuthSession();
-  const supabase = createClientComponentClient()
+  const { supabase } = useSupabase();
   const user = session?.user;
   const router = useRouter();
 
@@ -61,9 +61,9 @@ export default function Navbar({
     router.replace("/login");
   };
 
-  // const nameUser = user?.user_metadata.full_name || user?.user_metadata.name;
   const avatar = user?.user_metadata?.avatar_url;
-  console.log(avatar, provider)
+  // const nameUser = user?.user_metadata.full_name || user?.user_metadata.name;
+  console.log(avatar, provider);
 
   return (
     <header className={cn("sticky top-0 z-50 -mb-4 px-4 pb-4", className)}>
@@ -89,12 +89,19 @@ export default function Navbar({
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer">
                     <Avatar className="h-8 w-8 ring-2 ring-emerald-500/30">
-                      {avatar ? <Image src={avatar} width={100} alt={name} height={100} /> : (
+                      {avatar ? (
+                        <Image
+                          src={avatar}
+                          width={100}
+                          alt={name}
+                          height={100}
+                          className="rounded-full"
+                        />
+                      ) : (
                         <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white">
                           {user?.email?.[0]?.toUpperCase() ?? "U"}
                         </AvatarFallback>
                       )}
-
                     </Avatar>
                     <span>{name}</span>
                   </Avatar>
@@ -105,7 +112,10 @@ export default function Navbar({
                   <DropdownMenuItem onClick={() => router.replace("/dashboard")}>
                     <DashboardIcon className="h-4 w-4" /> Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={handleLogout}
+                  >
                     <LogOut className="h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>

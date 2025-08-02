@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
     DropdownMenu,
@@ -25,13 +25,13 @@ import {
     LogOut,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useSupabase } from "@/providers/SupabaseProvider"
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession"
 import Image from "next/image"
 
 export default function UserProfileDropdown() {
     const { user } = useSupabaseAuthSession()
-    const supabase = createClientComponentClient()
+    const { supabase } = useSupabase()
     const router = useRouter()
 
     const name = user?.user_metadata.full_name || user?.user_metadata.name || "User"
@@ -42,8 +42,6 @@ export default function UserProfileDropdown() {
         await supabase.auth.signOut()
         router.push("/login")
     }
-
-    console.log(avatar)
 
     return (
         <DropdownMenu>
