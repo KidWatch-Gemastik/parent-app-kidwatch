@@ -82,7 +82,7 @@ export default function AuthCallbackPage() {
 
                     {/* Brand Name */}
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-300 via-mint-200 to-emerald-400 bg-clip-text text-transparent mb-2 tracking-tight">
-                        KidsWatch
+                        KiddyGoo
                     </h1>
 
                     {/* Status Indicator */}

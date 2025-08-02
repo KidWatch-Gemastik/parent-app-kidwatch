@@ -76,7 +76,7 @@ export default function DashboardSidebar() {
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-300 to-mint-300 bg-clip-text text-transparent">
-                                    KidsWatch
+                                    KiddyGoo
                                 </h2>
                                 <div className="flex items-center gap-1">
                                     <Sparkles className="w-3 h-3 text-emerald-400" />

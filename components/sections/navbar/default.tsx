@@ -30,7 +30,7 @@ import {
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import Image from "next/image";
 import { DashboardIcon } from "@radix-ui/react-icons";
-import { useSupabase } from "@/providers/SupabaseProvider"; // ✅ ganti pakai provider
+import { useSupabase } from "@/providers/SupabaseProvider"; 
 
 interface NavbarProps {
   logo?: ReactNode;

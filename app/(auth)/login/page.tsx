@@ -129,7 +129,7 @@ export default function LoginPage() {
                                     <Shield className="w-7 h-7 text-white" />
                                 </div>
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 via-mint-300 to-emerald-500 bg-clip-text text-transparent mb-1">
-                                    KidsWatch
+                                    KiddyGoo
                                 </h1>
                                 <p className="text-gray-400 text-sm font-light flex items-center justify-center gap-1">
                                     <Sparkles className="w-3 h-3 text-emerald-400" />
@@ -305,7 +305,8 @@ export default function LoginPage() {
                                         Lindungi Anak Anda di Era Digital
                                     </h3>
                                     <p className="text-gray-300 font-light leading-relaxed text-sm">
-                                        KidsWatch memberikan perlindungan terdepan untuk aktivitas online anak-anak dengan teknologi AI yang
+                                        KiddyGoo
+                                        memberikan perlindungan terdepan untuk aktivitas online anak-anak dengan teknologi AI yang
                                         canggih.
                                     </p>
                                 </div>

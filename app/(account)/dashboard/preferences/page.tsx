@@ -114,7 +114,7 @@ export default function PreferencesPage() {
                                 <span>Theme & Appearance</span>
                             </CardTitle>
                             <CardDescription className="text-gray-400">
-                                Customize the look and feel of your KidsWatch experience
+                                Customize the look and feel of your KiddyGoo experience
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
