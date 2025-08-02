@@ -254,7 +254,7 @@ export default function AIAssistant() {
     }
 
     return (
-        <div className="h-full flex relative bg-transparent">
+        <div className="h-full w-full relative overflow-hidden">
             {/* Mobile Overlay */}
             {isMobile && (showSidebar || showMediaPanel) && (
                 <div
@@ -269,11 +269,11 @@ export default function AIAssistant() {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "bg-gray-900/90 backdrop-blur-xl border-r border-emerald-500/20 transition-all duration-300 z-50 flex flex-col",
+                    "bg-gray-900/90 backdrop-blur-xl border-r border-emerald-500/20 transition-all duration-300 flex flex-col",
                     // Desktop behavior
-                    !isMobile && "w-80",
+                    !isMobile && "w-80 relative z-10",
                     // Mobile behavior
-                    isMobile && (showSidebar ? "w-80 absolute left-0 top-0 bottom-0 shadow-2xl" : "w-0 overflow-hidden"),
+                    isMobile && (showSidebar ? "w-80 fixed left-0 top-0 bottom-0 shadow-2xl z-50" : "w-0 overflow-hidden"),
                 )}
             >
                 {/* Sidebar Header */}
@@ -363,7 +363,7 @@ export default function AIAssistant() {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className={cn("flex-1 flex flex-col min-w-0 relative", isMobile && showSidebar && "pointer-events-none")}>
                 {/* Header */}
                 <header className="border-b border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-3 md:p-4 shrink-0">
                     <div className="flex items-center justify-between">
@@ -535,50 +535,48 @@ export default function AIAssistant() {
             </div>
 
             {/* Media Panel - Slide from right */}
-            {chatMedia.length > 0 && (
-                <div
-                    className={cn(
-                        "border-l border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl transition-all duration-300 z-40",
-                        isMobile
-                            ? showMediaPanel
-                                ? "fixed right-0 top-0 bottom-0 w-72 shadow-2xl"
-                                : "w-0 overflow-hidden"
-                            : showMediaPanel
-                                ? "w-80"
-                                : "w-0 overflow-hidden",
-                    )}
-                >
-                    <div className="flex flex-col h-full">
-                        <div className="flex items-center justify-between p-3 md:p-4 border-b border-emerald-500/20">
-                            <h2 className="text-base md:text-lg font-semibold text-emerald-400 flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
-                                Media Terbaru
-                            </h2>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setShowMediaPanel(false)}
-                                className="text-gray-400 hover:text-white h-8 w-8"
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
-                        </div>
-
-                        <ScrollArea className="flex-1 p-3 md:p-4">
-                            <div className="grid grid-cols-2 gap-3 md:gap-4">
-                                {chatMedia.map((msg) => (
-                                    <div key={msg.id} className="flex flex-col items-center">
-                                        {renderMedia(msg)}
-                                        <span className="text-xs text-gray-400 mt-2 text-center truncate w-full">
-                                            {new Date(msg.created_at).toLocaleDateString("id-ID")}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </ScrollArea>
+            <div
+                className={cn(
+                    "border-l border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl transition-all duration-300",
+                    isMobile
+                        ? showMediaPanel
+                            ? "fixed right-0 top-0 bottom-0 w-72 shadow-2xl z-50"
+                            : "hidden"
+                        : showMediaPanel
+                            ? "w-80 relative z-10"
+                            : "hidden",
+                )}
+            >
+                <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-3 md:p-4 border-b border-emerald-500/20">
+                        <h2 className="text-base md:text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
+                            Media Terbaru
+                        </h2>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowMediaPanel(false)}
+                            className="text-gray-400 hover:text-white h-8 w-8"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
                     </div>
+
+                    <ScrollArea className="flex-1 p-3 md:p-4">
+                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                            {chatMedia.map((msg) => (
+                                <div key={msg.id} className="flex flex-col items-center">
+                                    {renderMedia(msg)}
+                                    <span className="text-xs text-gray-400 mt-2 text-center truncate w-full">
+                                        {new Date(msg.created_at).toLocaleDateString("id-ID")}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
                 </div>
-            )}
+            </div>
         </div>
     )
 }
