@@ -68,7 +68,7 @@ export function ChildCard({ child, onEdit, onDelete }: ChildCardProps) {
                                 <DialogTitle className="text-white font-semibold text-lg">
                                     QR Code untuk {child.name}
                                 </DialogTitle>
-                                <div className="flex justify-center">
+                                <div className="flex flex-col items-center justify-center">
                                     <QRCode.QRCodeCanvas value={qrValue} size={200} fgColor="#10B981" bgColor="transparent" />
                                     {child.qr_id && (
                                         <div className="flex flex-col items-center space-y-2">
