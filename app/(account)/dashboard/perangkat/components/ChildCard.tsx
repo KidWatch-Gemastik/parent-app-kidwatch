@@ -70,6 +70,24 @@ export function ChildCard({ child, onEdit, onDelete }: ChildCardProps) {
                                 </DialogTitle>
                                 <div className="flex justify-center">
                                     <QRCode.QRCodeCanvas value={qrValue} size={200} fgColor="#10B981" bgColor="transparent" />
+                                    {child.qr_id && (
+                                        <div className="flex flex-col items-center space-y-2">
+                                            <span className="text-sm font-mono text-gray-300 bg-gray-800/60 px-3 py-1 rounded-lg border border-gray-700/50">
+                                                {child.qr_id}
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(child.qr_id || "")
+                                                    alert("QR ID berhasil disalin!")
+                                                }}
+                                            >
+                                                Salin QR ID
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                                 <Button
                                     variant="ghost"

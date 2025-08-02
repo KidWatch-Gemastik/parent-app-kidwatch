@@ -5,6 +5,7 @@ export type Child = {
     sex: string
     avatar?: string
     qr_code?: string
+    qr_id?: string
     status?: "online" | "offline"
     lastSeen?: string
     location?: string // Added for location page

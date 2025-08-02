@@ -36,6 +36,16 @@ export default function ChildPage({ initialChildren }: { initialChildren: Child[
         }
     }, [freshChildren]);
 
+
+    function generateQrId(length = 12) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let result = "";
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
     // Redirect if no session
     useEffect(() => {
         if (!session) {
@@ -43,9 +53,10 @@ export default function ChildPage({ initialChildren }: { initialChildren: Child[
         }
     }, [session, router]);
 
-    const handleAddChild = async (child: Omit<Child, "id">) => {
+    const handleAddChild = async (child: Omit<Child, "id" | "qr_id">) => {
         if (!session) return;
-        const qr = uuidv4();
+
+        const qrId = generateQrId(12);
 
         const { data, error } = await supabase
             .from("children")
@@ -54,7 +65,7 @@ export default function ChildPage({ initialChildren }: { initialChildren: Child[
                 name: child.name,
                 date_of_birth: child.date_of_birth,
                 sex: child.sex,
-                qr_code: qr,
+                qr_id: qrId,
             })
             .select()
             .single();
@@ -64,7 +75,11 @@ export default function ChildPage({ initialChildren }: { initialChildren: Child[
             return;
         }
 
-        setChildren((prev) => [...prev, { ...child, id: data.id, qr_code: data.qr_code }]);
+        setChildren((prev) => [
+            ...prev,
+            { ...child, id: data.id, qr_id: data.qr_id }
+        ]);
+
         setIsAddModalOpen(false);
     };
 
