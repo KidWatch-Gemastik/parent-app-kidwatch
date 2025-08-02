@@ -1,60 +1,78 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useRef } from "react";
-import {
-    Loader2,
-    Send,
-    Sparkles,
-    ChevronDown,
-    ChevronRight,
-} from "lucide-react";
-import Image from "next/image";
-import { useSupabase } from "@/providers/SupabaseProvider";
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
+import { Loader2, Send, Sparkles, ChevronDown, ChevronRight, Menu, X, Mic, ImageIcon } from "lucide-react"
+import Image from "next/image"
+import { useSupabase } from "@/providers/SupabaseProvider"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 interface ChatEntry {
-    role: "user" | "ai";
-    message: string;
-    timestamp: string;
+    role: "user" | "ai"
+    message: string
+    timestamp: string
 }
 
 interface ChatMedia {
-    id: string;
-    file_url: string;
-    file_type: "image" | "video" | "audio" | "location";
-    file_name?: string;
-    created_at: string;
+    id: string
+    file_url: string
+    file_type: "image" | "video" | "audio" | "location"
+    file_name?: string
+    created_at: string
 }
 
 export default function AIAssistant() {
-    const [question, setQuestion] = useState("");
-    const [chatHistory, setChatHistory] = useState<ChatEntry[]>([]);
-    const [chatMedia, setChatMedia] = useState<ChatMedia[]>([]);
-    const [loading, setLoading] = useState(false);
-    const chatEndRef = useRef<HTMLDivElement>(null);
-    const [collapsed, setCollapsed] = useState<{ [date: string]: boolean }>({});
+    const [question, setQuestion] = useState("")
+    const [chatHistory, setChatHistory] = useState<ChatEntry[]>([])
+    const [chatMedia, setChatMedia] = useState<ChatMedia[]>([])
+    const [loading, setLoading] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
+    const [showSidebar, setShowSidebar] = useState(false)
+    const [collapsed, setCollapsed] = useState<{ [date: string]: boolean }>({})
+    const [isRecording, setIsRecording] = useState(false)
 
-    const { supabase } = useSupabase(); // ✅ Fix: ambil supabase client
+    const chatEndRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const { supabase } = useSupabase()
+
+    useEffect(() => {
+        const checkScreen = () => {
+            const mobile = window.innerWidth < 768
+            setIsMobile(mobile)
+            if (!mobile) {
+                setShowSidebar(true)
+            }
+        }
+        checkScreen()
+        window.addEventListener("resize", checkScreen)
+        return () => window.removeEventListener("resize", checkScreen)
+    }, [])
 
     const fetchChatHistory = async () => {
         const { data, error } = await supabase
             .from("ai_chat_logs")
             .select("question, answer, created_at")
             .order("created_at", { ascending: true })
-            .limit(200);
+            .limit(200)
 
         if (error) {
-            console.error("Error fetch history:", error.message, error.details);
-            return;
+            console.error("Error fetch history:", error.message, error.details)
+            return
         }
 
         const formatted: ChatEntry[] =
             data?.flatMap((item: any) => [
                 { role: "user", message: item.question, timestamp: item.created_at },
                 { role: "ai", message: item.answer || "❌ Tidak ada jawaban", timestamp: item.created_at },
-            ]) || [];
+            ]) || []
 
-        setChatHistory(formatted);
-    };
+        setChatHistory(formatted)
+    }
 
     const fetchChatMedia = async () => {
         const { data, error } = await supabase
@@ -62,278 +80,474 @@ export default function AIAssistant() {
             .select("id, file_url, file_type, file_name, created_at")
             .not("file_url", "is", null)
             .order("created_at", { ascending: false })
-            .limit(8);
+            .limit(8)
 
         if (error) {
-            console.error("Error fetch media:", error.message, error.details);
-            return;
+            console.error("Error fetch media:", error.message, error.details)
+            return
         }
 
-        setChatMedia(data || []);
-    };
+        setChatMedia(data || [])
+    }
 
     useEffect(() => {
-        fetchChatHistory();
-        fetchChatMedia();
-    }, []);
+        fetchChatHistory()
+        fetchChatMedia()
+    }, [])
 
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [chatHistory, loading]);
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, [chatHistory, loading])
 
     const askAI = async (q?: string) => {
-        const ask = q || question;
-        if (!ask.trim()) return;
+        const ask = q || question
+        if (!ask.trim()) return
 
-        const { data } = await supabase.auth.getUser(); // ✅ supabase.auth sekarang valid
-        const user = data.user;
+        const { data } = await supabase.auth.getUser()
+        const user = data.user
 
         if (!user) {
-            console.error("User belum login");
-            return;
+            console.error("User belum login")
+            return
         }
 
-        const now = new Date().toISOString();
-        const userChat: ChatEntry = { role: "user", message: ask, timestamp: now };
+        const now = new Date().toISOString()
+        const userChat: ChatEntry = { role: "user", message: ask, timestamp: now }
         const placeholder: ChatEntry = {
             role: "ai",
             message: "⏳ KiddyGoo sedang menganalisa...",
             timestamp: now,
-        };
+        }
 
-        setChatHistory((prev) => [...prev, userChat, placeholder]);
-        setQuestion("");
-        setLoading(true);
+        setChatHistory((prev) => [...prev, userChat, placeholder])
+        setQuestion("")
+        setLoading(true)
+
+        // Auto-resize textarea
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto"
+        }
 
         try {
             const res = await fetch("/api/ai-assistant", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ question: ask, userId: user.id }),
-            });
+            })
 
-            const data = await res.json();
-            const answer = data.answer || "❌ Maaf, saya tidak bisa menjawab saat ini.";
+            const data = await res.json()
+            const answer = data.answer || "❌ Maaf, saya tidak bisa menjawab saat ini."
 
             setChatHistory((prev) => {
-                const copy = [...prev];
+                const copy = [...prev]
                 copy[copy.length - 1] = {
                     role: "ai",
                     message: answer,
                     timestamp: now,
-                };
-                return copy;
-            });
+                }
+                return copy
+            })
         } catch (err) {
-            console.error(err);
+            console.error(err)
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     const quickActions = [
         "Bagaimana aktivitas anak hari ini?",
         "Ada panggilan mencurigakan?",
         "Tunjukkan lokasi terakhir anak",
         "Analisis media terbaru",
-    ];
+    ]
 
-    const groupedHistory = chatHistory.reduce(
-        (acc: Record<string, ChatEntry[]>, item) => {
-            const date = new Date(item.timestamp).toLocaleDateString();
-            if (!acc[date]) acc[date] = [];
-            acc[date].push(item);
-            return acc;
-        },
-        {}
-    );
+    const groupedHistory = chatHistory.reduce((acc: Record<string, ChatEntry[]>, item) => {
+        const date = new Date(item.timestamp).toLocaleDateString()
+        if (!acc[date]) acc[date] = []
+        acc[date].push(item)
+        return acc
+    }, {})
 
     const renderMedia = (msg: ChatMedia) => {
+        const baseClasses = cn(
+            "rounded-lg border border-emerald-500/20 object-cover transition-all duration-300 hover:scale-105",
+            isMobile ? "w-24 h-24" : "w-32 h-32",
+        )
+
         switch (msg.file_type) {
             case "image":
                 return (
                     <Image
-                        src={msg.file_url}
-                        width={100}
-                        height={100}
+                        src={msg.file_url || "/placeholder.svg"}
+                        width={isMobile ? 96 : 128}
+                        height={isMobile ? 96 : 128}
                         unoptimized
                         alt={msg.file_name || "image"}
-                        className="w-32 h-32 object-cover rounded-lg border border-gray-700"
+                        className={baseClasses}
                     />
-                );
+                )
             case "video":
-                return (
-                    <video
-                        src={msg.file_url}
-                        controls
-                        className="w-32 h-32 object-cover rounded-lg border border-gray-700"
-                    />
-                );
+                return <video src={msg.file_url} controls className={baseClasses} />
             case "audio":
-                return <audio src={msg.file_url} controls className="w-32" />;
+                return <audio src={msg.file_url} controls className={cn("w-full", isMobile ? "max-w-24" : "max-w-32")} />
             case "location":
                 return (
                     <iframe
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                            msg.file_name || ""
-                        )}&z=15&output=embed`}
-                        className="w-32 h-32 rounded-lg border border-gray-700"
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(msg.file_name || "")}&z=15&output=embed`}
+                        className={baseClasses}
                         loading="lazy"
                     />
-                );
+                )
             default:
                 return (
                     <a
                         href={msg.file_url}
                         target="_blank"
-                        className="text-emerald-400 underline text-sm"
+                        className="text-emerald-400 underline text-sm hover:text-emerald-300"
+                        rel="noreferrer"
                     >
                         {msg.file_name || "Lihat File"}
                     </a>
-                );
+                )
         }
-    };
+    }
+
+    const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setQuestion(e.target.value)
+
+        // Auto-resize textarea
+        const textarea = e.target
+        textarea.style.height = "auto"
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px"
+    }
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault()
+            askAI()
+        }
+    }
 
     return (
-        <div className="flex max-w-7xl mx-auto gap-4">
-            {/* Sidebar History */}
-            <aside className="w-64 bg-gray-900 border border-gray-800 rounded-xl p-4 overflow-y-auto h-[600px]">
-                <h2 className="text-lg font-semibold text-emerald-400 mb-4">
-                    Riwayat Chat AI
-                </h2>
-                {Object.keys(groupedHistory).length === 0 ? (
-                    <p className="text-gray-500 text-sm">Belum ada percakapan.</p>
-                ) : (
-                    Object.entries(groupedHistory).map(([date, chats]) => {
-                        const isCollapsed = collapsed[date];
-                        return (
-                            <div key={date} className="mb-2 border-b border-gray-800 pb-2">
-                                <button
-                                    onClick={() =>
-                                        setCollapsed((prev) => ({ ...prev, [date]: !isCollapsed }))
-                                    }
-                                    className="flex items-center justify-between w-full text-left text-gray-300 hover:text-emerald-400 transition"
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 relative">
+            {/* Mobile Overlay */}
+            {isMobile && showSidebar && (
+                <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setShowSidebar(false)} />
+            )}
+
+            <div className="flex h-screen relative">
+                {/* Sidebar */}
+                <aside
+                    className={cn(
+                        "bg-gray-900/80 backdrop-blur-xl border-r border-emerald-500/20 transition-all duration-300 z-50",
+                        // Desktop behavior
+                        !isMobile && "w-80",
+                        // Mobile behavior
+                        isMobile && (showSidebar ? "w-80 absolute left-0 top-0 bottom-0 shadow-2xl" : "w-0 overflow-hidden"),
+                    )}
+                >
+                    <div className="flex flex-col h-full">
+                        {/* Sidebar Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-emerald-500/20">
+                            <h2 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
+                                <Sparkles className="w-5 h-5" />
+                                Riwayat Chat AI
+                            </h2>
+                            {isMobile && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowSidebar(false)}
+                                    className="text-gray-400 hover:text-white h-8 w-8"
                                 >
-                                    <span className="font-medium">{date}</span>
-                                    {isCollapsed ? (
-                                        <ChevronRight size={16} />
-                                    ) : (
-                                        <ChevronDown size={16} />
-                                    )}
-                                </button>
-                                {!isCollapsed && (
-                                    <div className="mt-2 space-y-1">
-                                        {chats.map((c, i) => (
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Chat History */}
+                        <ScrollArea className="flex-1 p-4">
+                            {Object.keys(groupedHistory).length === 0 ? (
+                                <div className="text-center py-8">
+                                    <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-8 h-8 text-emerald-400" />
+                                    </div>
+                                    <p className="text-gray-400 text-sm">Belum ada percakapan.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {Object.entries(groupedHistory).map(([date, chats]) => {
+                                        const isCollapsed = collapsed[date]
+                                        return (
+                                            <Card key={date} className="border border-emerald-500/20 bg-gray-800/50">
+                                                <CardHeader className="pb-2">
+                                                    <button
+                                                        onClick={() => setCollapsed((prev) => ({ ...prev, [date]: !isCollapsed }))}
+                                                        className="flex items-center justify-between w-full text-left hover:text-emerald-400 transition-colors"
+                                                    >
+                                                        <span className="font-medium text-white text-sm">{date}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                                                                {chats.length}
+                                                            </Badge>
+                                                            {isCollapsed ? (
+                                                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                            ) : (
+                                                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                                                            )}
+                                                        </div>
+                                                    </button>
+                                                </CardHeader>
+                                                {!isCollapsed && (
+                                                    <CardContent className="pt-0">
+                                                        <div className="space-y-2">
+                                                            {chats.map((c, i) => (
+                                                                <div
+                                                                    key={i}
+                                                                    className="text-xs p-2 rounded-md hover:bg-emerald-500/10 text-gray-300 cursor-pointer transition-colors border border-transparent hover:border-emerald-500/20"
+                                                                    title={c.role === "user" ? `Anda: ${c.message}` : `AI: ${c.message}`}
+                                                                    onClick={() => {
+                                                                        if (c.role === "user") {
+                                                                            setQuestion(c.message)
+                                                                            if (isMobile) setShowSidebar(false)
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="text-emerald-400 shrink-0">{c.role === "user" ? "🧑" : "🤖"}</span>
+                                                                        <span className="line-clamp-2 leading-relaxed">
+                                                                            {c.message.slice(0, 80)}
+                                                                            {c.message.length > 80 && "..."}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </CardContent>
+                                                )}
+                                            </Card>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </ScrollArea>
+                    </div>
+                </aside>
+
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col">
+                    {/* Header */}
+                    <header className="border-b border-emerald-500/20 bg-gray-900/80 backdrop-blur-xl p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {isMobile && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setShowSidebar(true)}
+                                        className="text-emerald-400 hover:bg-emerald-500/10 h-8 w-8"
+                                    >
+                                        <Menu className="w-4 h-4" />
+                                    </Button>
+                                )}
+                                <div>
+                                    <h1
+                                        className={cn(
+                                            "font-bold text-emerald-400 flex items-center gap-2",
+                                            isMobile ? "text-lg" : "text-2xl",
+                                        )}
+                                    >
+                                        <Sparkles className={cn("text-emerald-400", isMobile ? "w-5 h-5" : "w-6 h-6")} />
+                                        AI Assistant
+                                    </h1>
+                                    <p className="text-sm text-gray-400">Monitoring Anak Cerdas</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                    <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                                    Online
+                                </Badge>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Chat Area */}
+                    <div className="flex-1 flex flex-col">
+                        {/* Messages */}
+                        <ScrollArea className="flex-1 p-4">
+                            <div className="max-w-4xl mx-auto space-y-4">
+                                {chatHistory.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="w-20 h-20 mx-auto mb-6 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                                            <Sparkles className="w-10 h-10 text-emerald-400 animate-pulse" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-white mb-2">Selamat datang di AI Assistant! 👋</h3>
+                                        <p className="text-gray-400 mb-6">Tanyakan sesuatu tentang aktivitas dan keamanan anak Anda</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                                            {quickActions.map((action, index) => (
+                                                <Button
+                                                    key={index}
+                                                    variant="outline"
+                                                    onClick={() => askAI(action)}
+                                                    disabled={loading}
+                                                    className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 bg-transparent text-left justify-start h-auto p-4"
+                                                >
+                                                    <span className="text-emerald-400 mr-3">💡</span>
+                                                    <span className="text-sm">{action}</span>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    chatHistory.map((chat, i) => (
+                                        <div key={i} className={cn("flex", chat.role === "user" ? "justify-end" : "justify-start")}>
                                             <div
-                                                key={i}
-                                                className="text-xs px-2 py-1 rounded-md hover:bg-gray-800 text-gray-400 truncate cursor-pointer"
-                                                title={c.role === "user" ? `Anda: ${c.message}` : `AI: ${c.message}`}
+                                                className={cn(
+                                                    "px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-lg backdrop-blur-sm",
+                                                    isMobile ? "max-w-[85%]" : "max-w-[75%]",
+                                                    chat.role === "user"
+                                                        ? "bg-emerald-500/20 text-white border border-emerald-500/30 rounded-br-none"
+                                                        : "bg-gray-800/80 text-gray-200 border border-gray-700/50 rounded-bl-none",
+                                                )}
                                             >
-                                                {c.role === "user" ? "🧑 " : "🤖 "}
-                                                {c.message.slice(0, 30)}
+                                                {chat.message}
+                                                {chat.message.startsWith("⏳") && (
+                                                    <Loader2 className="inline ml-2 w-4 h-4 animate-spin text-emerald-400" />
+                                                )}
+                                                <div className="text-xs opacity-60 mt-2">{new Date(chat.timestamp).toLocaleTimeString()}</div>
                                             </div>
+                                        </div>
+                                    ))
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+                        </ScrollArea>
+
+                        {/* Quick Actions (when chat exists) */}
+                        {chatHistory.length > 0 && (
+                            <div className="border-t border-emerald-500/20 bg-gray-900/50 p-4">
+                                <div className="max-w-4xl mx-auto">
+                                    <div className="flex flex-wrap gap-2">
+                                        {quickActions.map((q, index) => (
+                                            <Button
+                                                key={index}
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => askAI(q)}
+                                                disabled={loading}
+                                                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 bg-transparent text-xs"
+                                            >
+                                                {q}
+                                            </Button>
                                         ))}
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })
-                )}
-            </aside>
-
-            {/* Main Chat */}
-            <div className="flex-1 space-y-8">
-                <h1 className="text-2xl font-bold text-emerald-400 mb-4 text-center flex items-center justify-center gap-2">
-                    <Sparkles className="w-6 h-6 text-emerald-400" /> AI Assistant Monitoring Anak
-                </h1>
-
-                {/* Chat Box */}
-                <div className="bg-gray-900/70 border border-gray-800 rounded-xl p-6 h-[500px] overflow-y-auto space-y-4">
-                    {chatHistory.length === 0 ? (
-                        <p className="text-gray-500 text-center mt-10">
-                            👋 Halo! Tanyakan sesuatu tentang aktivitas anak Anda.
-                        </p>
-                    ) : (
-                        chatHistory.map((chat, i) => (
-                            <div
-                                key={i}
-                                className={`flex ${chat.role === "user" ? "justify-end" : "justify-start"}`}
-                            >
-                                <div
-                                    className={`px-4 py-2 rounded-lg max-w-[75%] whitespace-pre-wrap ${chat.role === "user"
-                                        ? "bg-emerald-600 text-white"
-                                        : "bg-gray-800 text-gray-200"
-                                        }`}
-                                >
-                                    {chat.message}
-                                    {chat.message.startsWith("⏳") && (
-                                        <Loader2 className="inline ml-2 w-4 h-4 animate-spin text-emerald-400" />
-                                    )}
                                 </div>
                             </div>
-                        ))
-                    )}
-                    <div ref={chatEndRef} />
-                </div>
+                        )}
 
-                {/* Input */}
-                <div className="flex gap-2">
-                    <textarea
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Tanyakan sesuatu..."
-                        className="flex-1 p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-emerald-500"
-                        rows={2}
-                        disabled={loading}
-                    />
-                    <button
-                        onClick={() => askAI()}
-                        disabled={loading}
-                        className={`px-4 py-2 rounded-lg flex items-center justify-center transition-colors ${loading
-                            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                            }`}
-                    >
-                        {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
-                    </button>
-                </div>
+                        {/* Input Area */}
+                        <div className="border-t border-emerald-500/20 bg-gray-900/80 backdrop-blur-xl p-4">
+                            <div className="max-w-4xl mx-auto">
+                                <div className="flex gap-3 items-end">
+                                    {/* Voice Recording Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className={cn(
+                                            "shrink-0 border-emerald-500/30 hover:bg-emerald-500/10 transition-all duration-200",
+                                            isMobile ? "h-10 w-10" : "h-12 w-12",
+                                            isRecording && "bg-red-500/20 border-red-500/30 animate-pulse",
+                                        )}
+                                        disabled={loading}
+                                    >
+                                        <Mic className={cn("text-emerald-400", isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                    </Button>
 
-                {/* Quick Actions */}
-                <div className="flex flex-wrap gap-2">
-                    {quickActions.map((q) => (
-                        <button
-                            key={q}
-                            onClick={() => askAI(q)}
-                            disabled={loading}
-                            className={`px-3 py-1 rounded-lg text-sm transition ${loading
-                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                                : "bg-gray-800 hover:bg-gray-700 text-gray-200"
-                                }`}
-                        >
-                            {q}
-                        </button>
-                    ))}
-                </div>
+                                    {/* Text Input */}
+                                    <div className="flex-1 relative">
+                                        <textarea
+                                            ref={textareaRef}
+                                            value={question}
+                                            onChange={handleTextareaChange}
+                                            onKeyPress={handleKeyPress}
+                                            placeholder="Tanyakan sesuatu tentang anak Anda..."
+                                            className={cn(
+                                                "w-full p-3 pr-12 rounded-xl bg-gray-800/80 text-white border border-emerald-500/20 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all duration-200",
+                                                isMobile ? "text-sm min-h-[40px]" : "text-base min-h-[48px]",
+                                            )}
+                                            rows={1}
+                                            disabled={loading}
+                                            style={{ maxHeight: "120px" }}
+                                        />
 
-                {/* Media Carousel */}
-                <div>
-                    <h2 className="text-xl font-semibold text-emerald-400 mb-4">Media Terbaru Anak</h2>
-                    {chatMedia.length === 0 ? (
-                        <p className="text-gray-500">Belum ada media terkirim dari anak.</p>
-                    ) : (
-                        <div className="flex gap-4 overflow-x-auto pb-2">
-                            {chatMedia.map((msg) => (
-                                <div key={msg.id} className="flex flex-col items-center">
-                                    {renderMedia(msg)}
-                                    <span className="text-xs text-gray-500 mt-1">
-                                        {new Date(msg.created_at).toLocaleString()}
-                                    </span>
+                                        {/* Character count */}
+                                        <div className="absolute bottom-1 right-1 text-xs text-gray-500">{question.length}/500</div>
+                                    </div>
+
+                                    {/* Send Button */}
+                                    <Button
+                                        onClick={() => askAI()}
+                                        disabled={loading || !question.trim()}
+                                        className={cn(
+                                            "shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-200 hover:scale-105",
+                                            isMobile ? "h-10 w-10 p-0" : "h-12 w-12 p-0",
+                                        )}
+                                    >
+                                        {loading ? (
+                                            <Loader2 className={cn("animate-spin", isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                        ) : (
+                                            <Send className={cn(isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                        )}
+                                    </Button>
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
+
+            {/* Media Section - Bottom Sheet on Mobile */}
+            {chatMedia.length > 0 && (
+                <div
+                    className={cn(
+                        "border-t border-emerald-500/20 bg-gray-900/80 backdrop-blur-xl",
+                        isMobile ? "fixed bottom-0 left-0 right-0 z-30" : "relative",
+                    )}
+                >
+                    <div className="p-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2
+                                    className={cn(
+                                        "font-semibold text-emerald-400 flex items-center gap-2",
+                                        isMobile ? "text-base" : "text-xl",
+                                    )}
+                                >
+                                    <ImageIcon className={cn("text-emerald-400", isMobile ? "w-4 h-4" : "w-5 h-5")} />
+                                    Media Terbaru Anak
+                                </h2>
+                                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                                    {chatMedia.length} item
+                                </Badge>
+                            </div>
+
+                            <ScrollArea className="w-full">
+                                <div className="flex gap-4 pb-2">
+                                    {chatMedia.map((msg) => (
+                                        <div key={msg.id} className="flex flex-col items-center shrink-0">
+                                            {renderMedia(msg)}
+                                            <span className="text-xs text-gray-400 mt-2 text-center max-w-24 truncate">
+                                                {new Date(msg.created_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    );
+    )
 }
