@@ -350,7 +350,7 @@ export default function RegisterPage() {
 
                             <div className="relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-emerald-500/20">
                                 <Image
-                                    src="/placeholder.svg?height=300&width=300&text=Family+Registration+Safety"
+                                    src="/kiddygoo/Kids Studying from Home-bro.svg?height=300&width=300&text=Family+Registration+Safety"
                                     alt="Keluarga mendaftar untuk keamanan digital"
                                     width={300}
                                     height={300}

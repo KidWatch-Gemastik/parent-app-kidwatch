@@ -294,7 +294,7 @@ export default function LoginPage() {
 
                             <div className="relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-emerald-500/20">
                                 <Image
-                                    src="/placeholder.svg?height=300&width=300&text=Kids+Digital+Safety"
+                                    src="/kiddygoo/Kids playing with car toys-cuate.svg?height=300&width=300&text=Kids+Digital+Safety"
                                     alt="Anak-anak menggunakan teknologi dengan aman"
                                     width={300}
                                     height={300}
