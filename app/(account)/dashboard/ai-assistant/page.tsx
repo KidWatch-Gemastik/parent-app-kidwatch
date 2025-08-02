@@ -27,7 +27,7 @@ export default function AssistantPage() {
                 </header>
 
                 {/* Main content */}
-                <main className="h-[calc(100vh-80px)]">
+                <main className="h-screen">
                     <AIAssistant />
                 </main>
             </div>
