@@ -486,19 +486,7 @@ export default function AIAssistant() {
                     <div className="border-t border-emerald-500/20 bg-gray-900/90 backdrop-blur-xl p-4 shrink-0">
                         <div className="max-w-4xl mx-auto">
                             <div className="flex gap-3 items-end">
-                                {/* Voice Recording Button */}
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className={cn(
-                                        "shrink-0 border-emerald-500/30 hover:bg-emerald-500/10 transition-all duration-200",
-                                        isMobile ? "h-10 w-10" : "h-12 w-12",
-                                        isRecording && "bg-red-500/20 border-red-500/30 animate-pulse",
-                                    )}
-                                    disabled={loading}
-                                >
-                                    <Mic className={cn("text-emerald-400", isMobile ? "w-4 h-4" : "w-5 h-5")} />
-                                </Button>
+                                
 
                                 {/* Text Input */}
                                 <div className="flex-1 relative">
