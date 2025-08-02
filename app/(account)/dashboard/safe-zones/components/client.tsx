@@ -17,7 +17,7 @@ interface SafeZonesPageClientProps {
 }
 
 export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZonesPageClientProps) {
-    const { session, supabase } = useSupabase(); // ✅ Ambil dari provider
+    const { session, supabase } = useSupabase();
     const [safeZones, setSafeZones] = useState<SafeZone[]>(initialSafeZones);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -26,12 +26,11 @@ export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZone
     const [isLoading, setIsLoading] = useState(false);
 
     const refreshData = async () => {
-        if (!session) return; // ✅ Pastikan sudah login
+        if (!session) return;
         setIsLoading(true);
 
-        // ✅ Fetch dari client
         const updatedSafeZones = await fetchSafeZonesClient(supabase, session.user.id);
-
+        console.log("Fetched safe zones:", updatedSafeZones);
         setSafeZones(updatedSafeZones);
         setIsLoading(false);
     };
