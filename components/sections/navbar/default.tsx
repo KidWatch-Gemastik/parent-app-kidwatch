@@ -30,7 +30,7 @@ import {
 import { Avatar, AvatarFallback } from "../../ui/avatar";
 import Image from "next/image";
 import { DashboardIcon } from "@radix-ui/react-icons";
-import { useSupabase } from "@/providers/SupabaseProvider";
+import { useSupabase } from "@/providers/SupabaseProvider"; 
 
 interface NavbarProps {
   logo?: ReactNode;
@@ -49,19 +49,21 @@ export default function Navbar({
   customNavigation,
   className,
 }: NavbarProps) {
-  const { session, user, provider } = useSupabaseAuthSession();
+  const { session, provider } = useSupabaseAuthSession();
   const { supabase } = useSupabase();
+  const user = session?.user;
   const router = useRouter();
 
   const currentLinks: NavbarLink[] = user ? authLinks : guestLinks;
-  const avatar = user?.user_metadata?.avatar_url;
 
   const handleLogout = async () => {
-    localStorage.removeItem("kidy-goo-auth");
     await supabase.auth.signOut();
-    router.refresh();
     router.replace("/login");
   };
+
+  const avatar = user?.user_metadata?.avatar_url;
+  // const nameUser = user?.user_metadata.full_name || user?.user_metadata.name;
+  console.log(avatar, provider);
 
   return (
     <header className={cn("sticky top-0 z-50 -mb-4 px-4 pb-4", className)}>
@@ -79,21 +81,20 @@ export default function Navbar({
             {showNavigation && (customNavigation || <Navigation />)}
           </NavbarLeft>
 
-          {/* ⬇️ Key untuk paksa re-render ketika user logout */}
-          <NavbarRight key={user?.id ?? "guest"}>
+          <NavbarRight>
             <ModeToggle />
 
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Avatar className="cursor-pointer flex items-center gap-2">
+                  <Avatar className="cursor-pointer">
                     <Avatar className="h-8 w-8 ring-2 ring-emerald-500/30">
                       {avatar ? (
                         <Image
                           src={avatar}
                           width={100}
-                          height={100}
                           alt={name}
+                          height={100}
                           className="rounded-full"
                         />
                       ) : (
@@ -102,7 +103,7 @@ export default function Navbar({
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="hidden md:inline">{name}</span>
+                    <span>{name}</span>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -130,7 +131,6 @@ export default function Navbar({
               </>
             )}
 
-            {/* Mobile Navigation */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button

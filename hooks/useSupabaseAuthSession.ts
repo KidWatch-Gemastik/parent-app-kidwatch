@@ -4,12 +4,9 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import type { Session, User } from "@supabase/supabase-js"
 
-import { useRouter } from "next/navigation";
-
 export function useSupabaseAuthSession() {
     const [session, setSession] = useState<Session | null>(null)
     const [loading, setLoading] = useState(true)
-    const router = useRouter()
 
     useEffect(() => {
         let unsubscribed = false
@@ -28,7 +25,6 @@ export function useSupabaseAuthSession() {
             if (!unsubscribed) {
                 setSession(newSession)
                 setLoading(false)
-                router.refresh()
             }
         })
 
@@ -36,11 +32,15 @@ export function useSupabaseAuthSession() {
             unsubscribed = true
             listener.subscription.unsubscribe()
         }
-    }, [router])
+    }, [])
 
     const user: User | undefined = session?.user
     const provider = user?.app_metadata?.provider ?? null
 
-    return { session, user, loading, provider }
+    return {
+        session,
+        user,
+        loading,
+        provider,
+    }
 }
-
