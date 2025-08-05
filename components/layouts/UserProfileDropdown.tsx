@@ -42,6 +42,7 @@ export default function UserProfileDropdown() {
     const email = user?.email || "guest@example.com";
 
     const handleLogout = async () => {
+        localStorage.removeItem("kidy-goo-auth");
         await supabase.auth.signOut();
         router.refresh();
         router.push("/login");

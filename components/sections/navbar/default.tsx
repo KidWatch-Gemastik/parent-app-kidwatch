@@ -57,6 +57,7 @@ export default function Navbar({
   const avatar = user?.user_metadata?.avatar_url;
 
   const handleLogout = async () => {
+    localStorage.removeItem("kidy-goo-auth");
     await supabase.auth.signOut();
     router.refresh();
     router.replace("/login");
