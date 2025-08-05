@@ -14,6 +14,15 @@ export default function AuthCallbackPage() {
     );
     const [message, setMessage] = useState("Memproses login...");
 
+    const saveSessionToLocalStorage = (session: any) => {
+        if (!session) return;
+        try {
+            localStorage.setItem("kidy-goo-auth", JSON.stringify(session));
+        } catch (error) {
+            console.error("Failed to save session:", error);
+        }
+    };
+
     useEffect(() => {
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
@@ -28,7 +37,7 @@ export default function AuthCallbackPage() {
                     access_token,
                     refresh_token,
                 })
-                .then(({ error }) => {
+                .then(({ error, data }) => {
                     if (error) {
                         console.error("Failed to set session", error);
                         setStatus("error");
@@ -37,6 +46,9 @@ export default function AuthCallbackPage() {
                             router.replace("/login?error=invalid_or_expired");
                         }, 2000);
                     } else {
+                        if (data.session) {
+                            saveSessionToLocalStorage(data.session);
+                        }
                         setStatus("success");
                         setMessage("Berhasil masuk! Mengarahkan...");
                         setTimeout(() => {
