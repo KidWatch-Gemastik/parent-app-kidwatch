@@ -280,7 +280,7 @@ export default function AIAssistant() {
                 <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSidebar(false)} />
             )}
 
-            <div className="flex h-full max-w-7xl mx-auto gap-4 p-4">
+            <div className="flex h-full max-w-7xl mx-auto overflow-y-auto gap-4 p-4">
                 <aside
                     className={cn(
                         "bg-gray-900/80 backdrop-blur-xl border border-emerald-500/20 rounded-xl p-4 transition-all duration-300",
@@ -380,7 +380,7 @@ export default function AIAssistant() {
                     </ScrollArea>
                 </aside>
 
-                <div className="flex-1 flex flex-col space-y-4 min-w-0">
+                <div className="flex-1 flex flex-col space-y-4 min-w-0 min-h-screen">
                     <div className="flex items-center justify-between">
                         <h1 className={cn("font-bold text-emerald-400 flex items-center gap-2", isMobile ? "text-lg" : "text-2xl")}>
                             <Sparkles className={cn("text-emerald-400", isMobile ? "w-5 h-5" : "w-6 h-6")} />
@@ -405,7 +405,7 @@ export default function AIAssistant() {
                     <div
                         className={cn(
                             "bg-gray-900/70 backdrop-blur-xl border border-emerald-500/20 rounded-xl p-4 overflow-y-auto space-y-4",
-                            isMobile ? "h-[300px]" : "h-[400px]",
+                            isMobile ? "h-screen" : "h-screen",
                         )}
                     >
                         {chatHistory.length === 0 ? (
