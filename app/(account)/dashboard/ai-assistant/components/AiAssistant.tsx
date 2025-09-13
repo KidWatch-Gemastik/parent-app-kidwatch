@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { MessageFormatter } from "./message-formatter"
 
 interface ChatEntry {
     role: "user" | "ai"
@@ -25,6 +26,12 @@ interface ChatMedia {
     created_at: string
 }
 
+interface ChatSession {
+    userQuestion: string
+    timestamp: string
+    chatIndex: number
+}
+
 export default function AIAssistant() {
     const [question, setQuestion] = useState("")
     const [chatHistory, setChatHistory] = useState<ChatEntry[]>([])
@@ -38,7 +45,6 @@ export default function AIAssistant() {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const { supabase } = useSupabase()
 
-    // Check if mobile
     useEffect(() => {
         const checkScreen = () => {
             const mobile = window.innerWidth < 768
@@ -122,7 +128,6 @@ export default function AIAssistant() {
         setQuestion("")
         setLoading(true)
 
-        // Auto-resize textarea
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto"
         }
@@ -159,13 +164,6 @@ export default function AIAssistant() {
         "Tunjukkan lokasi terakhir anak",
         "Analisis media terbaru",
     ]
-
-    const groupedHistory = chatHistory.reduce((acc: Record<string, ChatEntry[]>, item) => {
-        const date = new Date(item.timestamp).toLocaleDateString("id-ID")
-        if (!acc[date]) acc[date] = []
-        acc[date].push(item)
-        return acc
-    }, {})
 
     const renderMedia = (msg: ChatMedia) => {
         const baseClasses = cn(
@@ -209,7 +207,6 @@ export default function AIAssistant() {
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setQuestion(e.target.value)
 
-        // Auto-resize textarea
         const textarea = e.target
         textarea.style.height = "auto"
         textarea.style.height = Math.min(textarea.scrollHeight, isMobile ? 100 : 120) + "px"
@@ -222,21 +219,72 @@ export default function AIAssistant() {
         }
     }
 
+    const getDateLabel = (dateStr: string) => {
+        const date = new Date(dateStr)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+
+        const isToday = date.toDateString() === today.toDateString()
+        const isYesterday = date.toDateString() === yesterday.toDateString()
+
+        if (isToday) return "Hari ini"
+        if (isYesterday) return "Kemarin"
+
+        // For older dates, show day name and date
+        return date.toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+        })
+    }
+
+    const getGroupedChatSessions = () => {
+        const sessions: Record<string, ChatSession[]> = {}
+
+        // Find user questions and group them by date
+        chatHistory.forEach((chat, index) => {
+            if (chat.role === "user") {
+                const dateLabel = getDateLabel(chat.timestamp)
+                if (!sessions[dateLabel]) sessions[dateLabel] = []
+
+                sessions[dateLabel].push({
+                    userQuestion: chat.message,
+                    timestamp: chat.timestamp,
+                    chatIndex: index,
+                })
+            }
+        })
+
+        return sessions
+    }
+
+    const scrollToChat = (chatIndex: number) => {
+        const chatElements = document.querySelectorAll("[data-chat-index]")
+        const targetElement = chatElements[chatIndex] as HTMLElement
+        if (targetElement) {
+            targetElement.scrollIntoView({ behavior: "smooth", block: "center" })
+            // Highlight the message briefly
+            targetElement.style.backgroundColor = "rgba(16, 185, 129, 0.2)"
+            setTimeout(() => {
+                targetElement.style.backgroundColor = ""
+            }, 2000)
+        }
+    }
+
+    const groupedChatSessions = getGroupedChatSessions()
+
     return (
         <div className="h-full w-full relative">
-            {/* Mobile Overlay */}
             {isMobile && showSidebar && (
                 <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSidebar(false)} />
             )}
 
             <div className="flex h-full max-w-7xl mx-auto gap-4 p-4">
-                {/* Sidebar History */}
                 <aside
                     className={cn(
                         "bg-gray-900/80 backdrop-blur-xl border border-emerald-500/20 rounded-xl p-4 transition-all duration-300",
-                        // Desktop
                         !isMobile && "w-80",
-                        // Mobile
                         isMobile && (showSidebar ? "fixed left-4 top-20 bottom-4 w-80 z-50 shadow-2xl" : "hidden"),
                     )}
                 >
@@ -258,7 +306,7 @@ export default function AIAssistant() {
                     </div>
 
                     <ScrollArea className="h-[calc(100%-60px)]">
-                        {Object.keys(groupedHistory).length === 0 ? (
+                        {Object.keys(groupedChatSessions).length === 0 ? (
                             <div className="text-center py-8">
                                 <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
                                     <Sparkles className="w-8 h-8 text-emerald-400" />
@@ -267,42 +315,58 @@ export default function AIAssistant() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {Object.entries(groupedHistory).map(([date, chats]) => {
-                                    const isCollapsed = collapsed[date]
+                                {Object.entries(groupedChatSessions).map(([dateLabel, sessions]) => {
+                                    const isCollapsed = collapsed[dateLabel]
+                                    const isToday = dateLabel === "Hari ini"
+
                                     return (
-                                        <div key={date} className="border-b border-emerald-500/20 pb-3">
+                                        <div key={dateLabel} className="border-b border-emerald-500/20 pb-3">
                                             <button
-                                                onClick={() => setCollapsed((prev) => ({ ...prev, [date]: !isCollapsed }))}
+                                                onClick={() => setCollapsed((prev) => ({ ...prev, [dateLabel]: !isCollapsed }))}
                                                 className="flex items-center justify-between w-full text-left text-gray-300 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-emerald-500/10"
                                             >
-                                                <span className="font-medium text-sm">{date}</span>
+                                                <span className={cn("font-medium text-sm", isToday && "text-emerald-400")}>{dateLabel}</span>
                                                 <div className="flex items-center gap-2">
-                                                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
-                                                        {chats.length}
+                                                    <Badge
+                                                        className={cn(
+                                                            "text-xs",
+                                                            isToday
+                                                                ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
+                                                                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+                                                        )}
+                                                    >
+                                                        {sessions.length}
                                                     </Badge>
                                                     {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                 </div>
                                             </button>
-                                            {!isCollapsed && (
+
+                                            {(!isCollapsed || isToday) && (
                                                 <div className="mt-2 space-y-1">
-                                                    {chats.map((c, i) => (
+                                                    {sessions.map((session, i) => (
                                                         <div
                                                             key={i}
-                                                            className="text-xs p-2 rounded-md hover:bg-emerald-500/10 text-gray-400 cursor-pointer transition-colors border border-transparent hover:border-emerald-500/20"
-                                                            title={c.role === "user" ? `Anda: ${c.message}` : `AI: ${c.message}`}
+                                                            className="text-xs p-3 rounded-md hover:bg-emerald-500/10 text-gray-400 cursor-pointer transition-colors border border-transparent hover:border-emerald-500/20 group"
+                                                            title={`Pertanyaan: ${session.userQuestion}`}
                                                             onClick={() => {
-                                                                if (c.role === "user") {
-                                                                    setQuestion(c.message)
-                                                                    if (isMobile) setShowSidebar(false)
-                                                                }
+                                                                scrollToChat(session.chatIndex)
+                                                                if (isMobile) setShowSidebar(false)
                                                             }}
                                                         >
                                                             <div className="flex items-start gap-2">
-                                                                <span className="text-emerald-400 shrink-0">{c.role === "user" ? "🧑" : "🤖"}</span>
-                                                                <span className="line-clamp-2 leading-relaxed">
-                                                                    {c.message.slice(0, isMobile ? 40 : 50)}
-                                                                    {c.message.length > (isMobile ? 40 : 50) && "..."}
-                                                                </span>
+                                                                <span className="text-emerald-400 shrink-0 text-sm">🧑</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <span className="line-clamp-2 leading-relaxed group-hover:text-gray-200 transition-colors">
+                                                                        {session.userQuestion.slice(0, isMobile ? 45 : 55)}
+                                                                        {session.userQuestion.length > (isMobile ? 45 : 55) && "..."}
+                                                                    </span>
+                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                        {new Date(session.timestamp).toLocaleTimeString("id-ID", {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -316,9 +380,7 @@ export default function AIAssistant() {
                     </ScrollArea>
                 </aside>
 
-                {/* Main Chat */}
                 <div className="flex-1 flex flex-col space-y-4 min-w-0">
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                         <h1 className={cn("font-bold text-emerald-400 flex items-center gap-2", isMobile ? "text-lg" : "text-2xl")}>
                             <Sparkles className={cn("text-emerald-400", isMobile ? "w-5 h-5" : "w-6 h-6")} />
@@ -340,7 +402,6 @@ export default function AIAssistant() {
                         </Badge>
                     </div>
 
-                    {/* Chat Box */}
                     <div
                         className={cn(
                             "bg-gray-900/70 backdrop-blur-xl border border-emerald-500/20 rounded-xl p-4 overflow-y-auto space-y-4",
@@ -359,17 +420,24 @@ export default function AIAssistant() {
                             </div>
                         ) : (
                             chatHistory.map((chat, i) => (
-                                <div key={i} className={cn("flex", chat.role === "user" ? "justify-end" : "justify-start")}>
+                                <div
+                                    key={i}
+                                    className={cn(
+                                        "flex transition-colors duration-500",
+                                        chat.role === "user" ? "justify-end" : "justify-start",
+                                    )}
+                                    data-chat-index={i}
+                                >
                                     <div
                                         className={cn(
-                                            "px-4 py-3 rounded-2xl whitespace-pre-wrap shadow-lg backdrop-blur-sm",
+                                            "px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm",
                                             isMobile ? "max-w-[85%]" : "max-w-[75%]",
                                             chat.role === "user"
                                                 ? "bg-emerald-500/20 text-white border border-emerald-500/30 rounded-br-none"
                                                 : "bg-gray-800/80 text-gray-200 border border-gray-700/50 rounded-bl-none",
                                         )}
                                     >
-                                        <div className={cn("text-sm", !isMobile && "text-base")}>{chat.message}</div>
+                                        <MessageFormatter message={chat.message} className={cn("text-sm", !isMobile && "text-base")} />
                                         {chat.message.startsWith("⏳") && (
                                             <Loader2 className="inline ml-2 w-4 h-4 animate-spin text-emerald-400" />
                                         )}
@@ -386,7 +454,6 @@ export default function AIAssistant() {
                         <div ref={chatEndRef} />
                     </div>
 
-                    {/* Input */}
                     <div className="flex gap-2">
                         <div className="flex-1 relative">
                             <textarea
@@ -409,6 +476,7 @@ export default function AIAssistant() {
                         <Button
                             onClick={() => askAI()}
                             disabled={loading || !question.trim()}
+                            variant="glow"
                             className={cn(
                                 "shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white transition-all duration-200 hover:scale-105",
                                 isMobile ? "h-10 w-10 p-0" : "h-12 w-12 p-0",
@@ -422,7 +490,6 @@ export default function AIAssistant() {
                         </Button>
                     </div>
 
-                    {/* Quick Actions */}
                     <div className="flex flex-wrap gap-2">
                         {quickActions.map((q, index) => (
                             <Button
@@ -438,7 +505,6 @@ export default function AIAssistant() {
                         ))}
                     </div>
 
-                    {/* Media Carousel */}
                     <div>
                         <h2
                             className={cn(
