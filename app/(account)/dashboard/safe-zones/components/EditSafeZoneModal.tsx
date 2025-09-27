@@ -1,27 +1,21 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sparkles, Pencil, Loader2 } from "lucide-react"
 import type { Child, SafeZone } from "@/types"
 import { updateSafeZone } from "@/lib/actions/safeZones"
+import dynamic from "next/dynamic"
 const MapPicker = dynamic(
     () => import("@/components/map-picker").then(mod => mod.MapPicker),
     { ssr: false }
 )
 import { ChildSelect } from "./childSelect"
-import dynamic from "next/dynamic"
 
-interface EditSafeZoneModalProps {
+interface EditSafeZoneSheetProps {
     isOpen: boolean
     onClose: () => void
     onSave: () => void
@@ -35,7 +29,7 @@ export function EditSafeZoneModal({
     onSave,
     zone,
     childrenList,
-}: EditSafeZoneModalProps) {
+}: EditSafeZoneSheetProps) {
     const [formData, setFormData] = useState({
         name: "",
         child_id: "",
@@ -96,7 +90,6 @@ export function EditSafeZoneModal({
             child_id,
         })
 
-
         if (result.success) {
             onSave()
             handleClose()
@@ -108,22 +101,22 @@ export function EditSafeZoneModal({
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl">
-                <DialogHeader className="relative z-10 mb-4">
-                    <DialogTitle className="flex items-center space-x-3 text-xl">
+        <Sheet open={isOpen} onOpenChange={handleClose}>
+            <SheetContent side="right" className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl rounded-t-2xl p-6">
+                <SheetHeader>
+                    <SheetTitle className="flex items-center space-x-3 text-xl">
                         <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-xl flex items-center justify-center shadow-lg">
                             <Pencil className="h-5 w-5 text-white" />
                         </div>
                         <span className="bg-gradient-to-r from-yellow-300 to-yellow-100 bg-clip-text text-transparent font-bold">
                             Edit Zona Aman
                         </span>
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-400 flex items-center gap-2 mt-2">
+                    </SheetTitle>
+                    <SheetDescription className="text-gray-400 flex items-center gap-2 mt-2">
                         <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
                         Perbarui detail zona aman anak Anda
-                    </DialogDescription>
-                </DialogHeader>
+                    </SheetDescription>
+                </SheetHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-6 relative z-10">
                     {error && (
@@ -200,7 +193,7 @@ export function EditSafeZoneModal({
                         </Button>
                     </div>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     )
 }

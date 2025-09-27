@@ -10,6 +10,7 @@ import type { SafeZone, Child } from "@/types";
 import { useState } from "react";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { fetchSafeZonesClient } from "@/hooks/safeZonesClient";
+// import { se } from "date-fns/locale";
 
 interface SafeZonesPageClientProps {
     initialSafeZones: SafeZone[];
@@ -18,28 +19,49 @@ interface SafeZonesPageClientProps {
 
 export function SafeZonesPageClient({ initialSafeZones, childrenList }: SafeZonesPageClientProps) {
     const { session, supabase } = useSupabase();
-    const [safeZones, setSafeZones] = useState<SafeZone[]>(initialSafeZones);
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedZone, setSelectedZone] = useState<SafeZone | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const zonesWithNamesInitial = initialSafeZones.map((zone) => {
+        const child = childrenList.find((c) => c.id === zone.child_id);
+        return { ...zone, child_name: child?.name || "N/A" };
+    });
+    const [safeZones, setSafeZones] = useState<SafeZone[]>(zonesWithNamesInitial);
+
+
+
+
+    console.log("Initial safe zones:", initialSafeZones);
+    console.log("Children list:", session);
+
 
     const refreshData = async () => {
         if (!session) return;
         setIsLoading(true);
 
-        const updatedSafeZones = await fetchSafeZonesClient(supabase, session.user.id);
-        console.log("Fetched safe zones:", updatedSafeZones);
-        setSafeZones(updatedSafeZones);
+        const zones = await fetchSafeZonesClient(supabase, session.user.id);
+
+        const zonesWithNames = zones.map((zone) => {
+            const child = childrenList.find((c) => c.id === zone.child_id);
+            return {
+                ...zone,
+                child_name: child?.name || "N/A",
+            };
+        });
+
+        setSafeZones(zonesWithNames);
         setIsLoading(false);
     };
+
 
     return (
         <>
             <section className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
+                <div className="flex flex-wrap gap-3 items-center justify-between">
+                    <div >
                         <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-mint-300 bg-clip-text text-transparent flex items-center gap-2">
                             <ShieldCheck className="w-6 h-6 text-emerald-400" />
                             Daftar Zona Aman

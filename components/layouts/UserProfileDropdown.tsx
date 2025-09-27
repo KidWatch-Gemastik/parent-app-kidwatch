@@ -23,11 +23,14 @@ import {
     ExternalLink,
     LogIn,
     LogOut,
+    HelpCircle,
+    BabyIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { useSupabaseAuthSession } from "@/hooks/useSupabaseAuthSession";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function UserProfileDropdown() {
     const { user } = useSupabaseAuthSession();
@@ -116,77 +119,27 @@ export default function UserProfileDropdown() {
 
                         <DropdownMenuSeparator />
 
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
                             <User className="mr-2 h-4 w-4" />
-                            Invite People
+                            Profile
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => router.push("/preferences")}>
+                        <DropdownMenuItem onClick={() => router.push("/dashboard/perangkat")}>
+                            <BabyIcon className="mr-2 h-4 w-4" />
+                            Add Child
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem onClick={() => router.push("/dashboard/preferences")}>
                             <Settings2 className="mr-2 h-4 w-4" />
                             Preferences
                         </DropdownMenuItem>
 
-                        {/* Filter */}
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <Filter className="mr-2 h-4 w-4" />
-                                Filter View
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>Activity</DropdownMenuSubTrigger>
-                                    <DropdownMenuSubContent>
-                                        <DropdownMenuCheckboxItem checked>
-                                            All
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem>
-                                            Unread only
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem>
-                                            Mentions only
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                                <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>People</DropdownMenuSubTrigger>
-                                    <DropdownMenuSubContent>
-                                        <DropdownMenuCheckboxItem checked>
-                                            Everyone
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem>
-                                            Only internal
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem>
-                                            With guests
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-
-                        {/* Tools */}
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <Bolt className="mr-2 h-4 w-4" />
-                                Tools & Settings
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-56">
-                                <DropdownMenuLabel>Tools</DropdownMenuLabel>
-                                <DropdownMenuItem>Customize Workspace</DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    Analytics <ExternalLink className="ml-auto h-3 w-3" />
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                                <DropdownMenuItem>Manage Integrations</DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
 
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Sign in on mobile
+                            <HelpCircle className="mr-2 h-4 w-4" />
+                            Help
                         </DropdownMenuItem>
 
                         <DropdownMenuItem onClick={handleLogout}>
@@ -209,6 +162,6 @@ export default function UserProfileDropdown() {
                     </>
                 )}
             </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu >
     );
 }

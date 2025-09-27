@@ -33,7 +33,15 @@ export function SupabaseProvider({
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, newSession) => {
             setSession(newSession);
+
+            // === tambahan untuk localStorage ===
+            if (newSession) {
+                localStorage.setItem("kidy-goo-auth", JSON.stringify(newSession));
+            } else {
+                localStorage.removeItem("kidy-goo-auth");
+            }
         });
+
         return () => subscription.unsubscribe();
     }, [supabase]);
 

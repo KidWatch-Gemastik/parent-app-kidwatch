@@ -49,7 +49,7 @@ export default function Navbar({
   customNavigation,
   className,
 }: NavbarProps) {
-  const { session, user, provider } = useSupabaseAuthSession();
+  const { user } = useSupabaseAuthSession();
   const { supabase } = useSupabase();
   const router = useRouter();
 

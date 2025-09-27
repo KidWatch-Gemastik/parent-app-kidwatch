@@ -91,10 +91,10 @@ export default function ChatPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between p-3 border-b border-emerald-500/20 bg-black/30 min-h-[60px]">
                     <div className="flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5 text-emerald-400" />
+                        {!collapsed && <MessageCircle className="w-5 h-5 text-emerald-400" />}
                         {!collapsed && <h2 className="font-semibold text-emerald-400">Chat</h2>}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className={`flex items-center gap-1`}>
                         {isMobile && (
                             <Button
                                 variant="ghost"

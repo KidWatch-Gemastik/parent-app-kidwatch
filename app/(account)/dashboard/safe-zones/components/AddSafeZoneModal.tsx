@@ -2,15 +2,14 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, Sparkles, Loader2 } from "lucide-react"
 import type { Child } from "@/types"
 import { addSafeZone } from "@/lib/actions/safeZones"
-// import { MapPicker } from "@/components/map-picker"
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"
 
 const MapPicker = dynamic(
     () => import("@/components/map-picker").then(mod => mod.MapPicker),
@@ -19,15 +18,14 @@ const MapPicker = dynamic(
 import 'leaflet/dist/leaflet.css';
 import { ChildSelect } from "./childSelect"
 
-
-interface AddSafeZoneModalProps {
+interface AddSafeZoneSheetProps {
     isOpen: boolean
     onClose: () => void
     onSave: () => void
     childrenList: Child[]
 }
 
-export function AddSafeZoneModal({ isOpen, onClose, onSave, childrenList }: AddSafeZoneModalProps) {
+export function AddSafeZoneModal({ isOpen, onClose, onSave, childrenList }: AddSafeZoneSheetProps) {
     const [formData, setFormData] = useState({
         name: "",
         child_id: "",
@@ -81,22 +79,22 @@ export function AddSafeZoneModal({ isOpen, onClose, onSave, childrenList }: AddS
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl">
-                <DialogHeader className="relative z-10 mb-4">
-                    <DialogTitle className="flex items-center space-x-3 text-xl">
+        <Sheet open={isOpen} onOpenChange={handleClose}>
+            <SheetContent side="right" className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl rounded-t-2xl p-6">
+                <SheetHeader>
+                    <SheetTitle className="flex items-center space-x-3 text-xl">
                         <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl flex items-center justify-center shadow-lg">
                             <Plus className="h-5 w-5 text-white" />
                         </div>
                         <span className="bg-gradient-to-r from-emerald-300 to-mint-300 bg-clip-text text-transparent font-bold">
                             Tambah Zona Aman Baru
                         </span>
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-400 flex items-center gap-2 mt-2">
+                    </SheetTitle>
+                    <SheetDescription className="text-gray-400 flex items-center gap-2 mt-2">
                         <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
                         Definisikan area aman untuk anak Anda
-                    </DialogDescription>
-                </DialogHeader>
+                    </SheetDescription>
+                </SheetHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-6 relative z-10">
                     {error && (
@@ -174,7 +172,7 @@ export function AddSafeZoneModal({ isOpen, onClose, onSave, childrenList }: AddS
                         </Button>
                     </div>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     )
 }

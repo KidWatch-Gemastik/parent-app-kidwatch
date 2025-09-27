@@ -16,6 +16,7 @@ interface ChatEntry {
     role: "user" | "ai"
     message: string
     timestamp: string
+    user_id?: string
 }
 
 interface ChatMedia {
@@ -30,6 +31,7 @@ interface ChatSession {
     userQuestion: string
     timestamp: string
     chatIndex: number
+    userId: string
 }
 
 export default function AIAssistant() {
@@ -240,24 +242,25 @@ export default function AIAssistant() {
     }
 
     const getGroupedChatSessions = () => {
-        const sessions: Record<string, ChatSession[]> = {}
+        const sessions: Record<string, ChatSession[]> = {};
 
-        // Find user questions and group them by date
         chatHistory.forEach((chat, index) => {
             if (chat.role === "user") {
-                const dateLabel = getDateLabel(chat.timestamp)
-                if (!sessions[dateLabel]) sessions[dateLabel] = []
+                const dateLabel = getDateLabel(chat.timestamp);
+                if (!sessions[dateLabel]) sessions[dateLabel] = [];
 
                 sessions[dateLabel].push({
                     userQuestion: chat.message,
                     timestamp: chat.timestamp,
                     chatIndex: index,
-                })
+                    userId: chat.user_id ?? "default",
+                });
             }
-        })
+        });
 
-        return sessions
-    }
+        return sessions;
+    };
+
 
     const scrollToChat = (chatIndex: number) => {
         const chatElements = document.querySelectorAll("[data-chat-index]")
@@ -271,6 +274,8 @@ export default function AIAssistant() {
             }, 2000)
         }
     }
+
+
 
     const groupedChatSessions = getGroupedChatSessions()
 
@@ -316,41 +321,58 @@ export default function AIAssistant() {
                         ) : (
                             <div className="space-y-3">
                                 {Object.entries(groupedChatSessions).map(([dateLabel, sessions]) => {
-                                    const isCollapsed = collapsed[dateLabel]
-                                    const isToday = dateLabel === "Hari ini"
+                                    const isCollapsed = collapsed[dateLabel] ?? true; // default collapsed
+
+                                    // Group per userId saat render, tetap array
+                                    const displaySessions = Object.values(
+                                        (sessions as ChatSession[]).reduce<Record<string, ChatSession[]>>((acc, s) => {
+                                            if (!acc[s.userId]) acc[s.userId] = [];
+                                            acc[s.userId].push(s);
+                                            return acc;
+                                        }, {})
+                                    ).flat();
 
                                     return (
                                         <div key={dateLabel} className="border-b border-emerald-500/20 pb-3">
-                                            <button
-                                                onClick={() => setCollapsed((prev) => ({ ...prev, [dateLabel]: !isCollapsed }))}
-                                                className="flex items-center justify-between w-full text-left text-gray-300 hover:text-emerald-400 transition-colors p-2 rounded-lg hover:bg-emerald-500/10"
-                                            >
-                                                <span className={cn("font-medium text-sm", isToday && "text-emerald-400")}>{dateLabel}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge
-                                                        className={cn(
-                                                            "text-xs",
-                                                            isToday
-                                                                ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
-                                                                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-                                                        )}
-                                                    >
-                                                        {sessions.length}
-                                                    </Badge>
-                                                    {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                </div>
-                                            </button>
+                                            {/* Header tiap tanggal */}
+                                            <div className="flex items-center justify-between text-gray-300 p-2 rounded-lg">
+                                                <span className="font-medium text-sm">{dateLabel}</span>
 
-                                            {(!isCollapsed || isToday) && (
+                                                <div className="flex items-center gap-2">
+                                                    <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                        {displaySessions.length}
+                                                    </Badge>
+
+                                                    {/* Tombol collapse/expand */}
+                                                    <button
+                                                        onClick={() =>
+                                                            setCollapsed((prev) => ({
+                                                                ...prev,
+                                                                [dateLabel]: !isCollapsed,
+                                                            }))
+                                                        }
+                                                        className="ml-2 text-gray-400 hover:text-emerald-400"
+                                                    >
+                                                        {isCollapsed ? (
+                                                            <ChevronRight className="w-4 h-4" />
+                                                        ) : (
+                                                            <ChevronDown className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Konten daftar chat hanya tampil kalau expanded */}
+                                            {!isCollapsed && (
                                                 <div className="mt-2 space-y-1">
-                                                    {sessions.map((session, i) => (
+                                                    {displaySessions.map((session, i) => (
                                                         <div
                                                             key={i}
                                                             className="text-xs p-3 rounded-md hover:bg-emerald-500/10 text-gray-400 cursor-pointer transition-colors border border-transparent hover:border-emerald-500/20 group"
                                                             title={`Pertanyaan: ${session.userQuestion}`}
                                                             onClick={() => {
-                                                                scrollToChat(session.chatIndex)
-                                                                if (isMobile) setShowSidebar(false)
+                                                                scrollToChat(session.chatIndex);
+                                                                if (isMobile) setShowSidebar(false);
                                                             }}
                                                         >
                                                             <div className="flex items-start gap-2">
@@ -373,12 +395,13 @@ export default function AIAssistant() {
                                                 </div>
                                             )}
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         )}
                     </ScrollArea>
                 </aside>
+
 
                 <div className="flex-1 flex flex-col space-y-4 min-w-0 min-h-screen">
                     <div className="flex items-center justify-between">

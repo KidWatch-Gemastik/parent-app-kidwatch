@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 export function createSupabaseServer(cookieStore: ReadonlyRequestCookies) {
@@ -22,4 +23,14 @@ export function createSupabaseServer(cookieStore: ReadonlyRequestCookies) {
             },
         }
     );
+}
+let supabaseAdmin: SupabaseClient | null = null;
+
+export function getSupabaseAdmin(): SupabaseClient {
+    if (supabaseAdmin) return supabaseAdmin;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-only key
+    if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    supabaseAdmin = createClient(url, key, { auth: { persistSession: false } });
+    return supabaseAdmin;
 }

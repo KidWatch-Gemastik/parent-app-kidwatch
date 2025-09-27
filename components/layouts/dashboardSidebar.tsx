@@ -89,7 +89,7 @@ export default function DashboardSidebar() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setCollapsed(!collapsed)}
-                        className="text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all duration-300 hover:scale-110"
+                        className="text-gray-400 md:flex hidden hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all duration-300 hover:scale-110"
                     >
                         {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
                     </Button>
@@ -123,7 +123,7 @@ export default function DashboardSidebar() {
                                                 {isActive && (
                                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-mint-400 rounded-r-full" />
                                                 )}
-                                                <Icon className="w-5 h-5 relative z-10 transition-all duration-300 group-hover:scale-110" />
+                                                <Icon className={`w-5 h-5 relative z-10 transition-all duration-300 ${collapsed ? 'scale-[3]' : 'hover:scale-110'}`} />
                                                 {!collapsed && <span className="relative z-10 font-medium">{label}</span>}
                                                 {isActive && !collapsed && (
                                                     <div className="absolute right-3 w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
@@ -214,7 +214,7 @@ export default function DashboardSidebar() {
         <>
             {/* Mobile Drawer */}
             <div className="md:hidden">
-                <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <Sheet open={isOpen} onOpenChange={setIsOpen} >
                     <SheetTrigger asChild>
                         <Button
                             variant="ghost"

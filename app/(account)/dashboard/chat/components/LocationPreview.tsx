@@ -32,7 +32,7 @@ export default function LocationPreview({ data }: LocationPreviewProps) {
     return (
         <div className="w-full h-full relative bg-gray-800/50 rounded-lg overflow-hidden">
             <iframe
-                src={`https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=${location.lat},${location.lng}&zoom=15`}
+                src={`https://www.google.com/maps?q=${location.lat},${location.lng}&z=15&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

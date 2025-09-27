@@ -9,8 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import { Mic, Video, ImageIcon, MapPin, ArrowLeft, Send, MoreVertical, Phone } from "lucide-react"
+import { Mic, Video, ImageIcon, MapPin, ArrowLeft, Send, MoreVertical, Phone, X, Check } from "lucide-react"
 import LocationPreview from "./LocationPreview"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import ChatActions from "./ChatAction"
 
 type ChatWindowProps = {
     childId: string
@@ -31,9 +33,54 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<BlobPart[]>([])
     const inputRef = useRef<HTMLInputElement>(null)
+    const [imageOpen, setImageOpen] = useState(false);
+    const videoRecorderRef = useRef<MediaRecorder | null>(null)
+    const videoChunksRef = useRef<BlobPart[]>([])
+    const [isVideoRecording, setIsVideoRecording] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+    const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+    const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 
-    // ✅ Ambil session & client dari provider
+    const highlightText = (text: string, query: string) => {
+        if (!query) return text
+        const regex = new RegExp(`(${query})`, "gi")
+        return text.split(regex).map((part, i) =>
+            regex.test(part) ? (
+                <span key={i} className="bg-yellow-300 text-black px-1 rounded">
+                    {part}
+                </span>
+            ) : (
+                part
+            )
+        )
+    }
+
+
+    //  Ambil session & client dari provider
     const { supabase, session } = useSupabase()
+
+    const [clearing, setClearing] = useState(false)
+
+    const handleClearChat = async () => {
+        if (!parentId) return
+
+        setClearing(true)
+
+        try {
+            await supabase
+                .from("chat_messages")
+                .delete()
+                .eq("child_id", childId)
+                .eq("parent_id", parentId)
+
+            messages.splice(0, messages.length)
+        } catch (error) {
+            console.error("Error clearing chat:", error)
+        } finally {
+            setClearing(false)
+        }
+    }
+
 
     useEffect(() => {
         if (session?.user) {
@@ -46,11 +93,32 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
         }
     }, [session, supabase])
 
+
+    const handleSearchQuery = (query: string) => {
+        setSearchQuery(query)
+
+        if (!query) {
+            setHighlightedMessageId(null)
+            return
+        }
+
+        const foundMessage = messages.find(msg =>
+            msg.message?.toLowerCase().includes(query.toLowerCase())
+        )
+
+        if (foundMessage) {
+            setHighlightedMessageId(foundMessage.id)
+            // scroll ke pesan yang match
+            messageRefs.current[foundMessage.id]?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+    }
+
+
     useEffect(() => {
-        scrollRef.current?.scrollTo({
-            top: scrollRef.current.scrollHeight,
-            behavior: "smooth",
-        })
+        const lastMessageId = messages[messages.length - 1]?.id
+        if (lastMessageId && messageRefs.current[lastMessageId]) {
+            messageRefs.current[lastMessageId]?.scrollIntoView({ behavior: "smooth", block: "end" })
+        }
     }, [messages])
 
     const handleSend = async () => {
@@ -62,7 +130,7 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
         }
     }
 
-    // ✅ Upload File ke Supabase Storage
+    //  Upload File ke Supabase Storage
     const handleFileUpload = async (file: File) => {
         if (!parentId) return
         const fileExt = file.name.split(".").pop()
@@ -124,34 +192,77 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
         }
     }
 
+    const handleCancelRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.onstop = null
+            mediaRecorderRef.current.stop()
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
+            setIsRecording(false)
+            chunksRef.current = []
+        }
+    }
+
     const handleStopRecording = () => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop()
         }
     }
 
-    // Rekam Video
     const handleRecordVideo = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             const mediaRecorder = new MediaRecorder(stream)
-            const chunks: BlobPart[] = []
 
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data)
+            videoRecorderRef.current = mediaRecorder
+            videoChunksRef.current = []
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    videoChunksRef.current.push(e.data)
+                }
+            }
+
             mediaRecorder.onstop = async () => {
-                const blob = new Blob(chunks, { type: "video/webm" })
+                // kalau cancel, jangan upload
+                if (!isVideoRecording) return
+
+                const blob = new Blob(videoChunksRef.current, { type: "video/webm" })
                 const file = new File([blob], "video-message.webm", { type: "video/webm" })
-                await handleFileUpload(file)
+
+                await handleFileUpload(file) // upload ke supabase
                 stream.getTracks().forEach((track) => track.stop())
+                videoChunksRef.current = []
             }
 
             mediaRecorder.start()
-            setTimeout(() => mediaRecorder.stop(), 5000)
+            setIsVideoRecording(true)
             setShowActions(false)
         } catch (error) {
             console.error("Error accessing camera:", error)
         }
     }
+
+    //  stop + kirim
+    const handleStopVideoRecording = () => {
+        if (videoRecorderRef.current && isVideoRecording) {
+            videoRecorderRef.current.stop()
+            setIsVideoRecording(false)
+        }
+    }
+
+    //  cancel
+    const handleCancelVideoRecording = () => {
+        if (videoRecorderRef.current && isVideoRecording) {
+            videoRecorderRef.current.onstop = null // supaya tidak upload
+            videoRecorderRef.current.stop()
+            videoRecorderRef.current.stream.getTracks().forEach((track) => track.stop())
+            videoChunksRef.current = []
+            setIsVideoRecording(false)
+        }
+    }
+
+
+
 
     const handleSendLocation = () => {
         if (!parentId) return
@@ -194,20 +305,19 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="shrink-0 hover:text-emerald-400 h-8 w-8">
+                    {/* <Button variant="ghost" size="icon" className="shrink-0 hover:text-emerald-400 h-8 w-8">
                         <Phone className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="shrink-0 hover:text-emerald-400 h-8 w-8">
                         <Video className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="shrink-0 hover:text-emerald-400 h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    </Button> */}
+                    <ChatActions onClearChat={handleClearChat}
+                        onSearch={handleSearchQuery} />
                 </div>
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-3 relative" ref={scrollRef}>
+            <ScrollArea className="flex-1 p-3 relative overflow-y-auto" ref={scrollRef}>
                 <div className="flex flex-col gap-2">
                     {loading && (
                         <>
@@ -242,7 +352,8 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
 
                     {!loading &&
                         messages.map((msg) => (
-                            <div key={msg.id} className={cn("flex", msg.sender_role === "parent" ? "justify-end" : "justify-start")}>
+                            <div key={msg.id} ref={(el) => { messageRefs.current[msg.id] = el }}
+                                className={cn("flex mb-7", msg.sender_role === "parent" ? "justify-end" : "justify-start")}>
                                 <div
                                     className={cn(
                                         "px-3 py-2 rounded-2xl text-sm backdrop-blur-sm shadow",
@@ -263,14 +374,33 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                                         </div>
                                     ) : msg.file_url ? (
                                         msg.file_type === "image" ? (
-                                            <Image
-                                                src={msg.file_url || "/placeholder.svg"}
-                                                alt={msg.file_name || "image"}
-                                                width={isMobile ? 120 : 150}
-                                                height={isMobile ? 120 : 150}
-                                                unoptimized
-                                                className="rounded-lg"
-                                            />
+                                            <>
+
+                                                <Image
+                                                    src={msg.file_url || "/placeholder.svg"}
+                                                    alt={msg.file_name || "image"}
+                                                    width={isMobile ? 120 : 150}
+                                                    height={isMobile ? 120 : 150}
+                                                    unoptimized
+                                                    className="rounded-lg cursor-pointer hover:opacity-80 transition"
+                                                    onClick={() => setImageOpen(true)}
+                                                />
+
+                                                {/* Preview Modal */}
+                                                <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+                                                    <DialogTitle className="hidden">{msg.file_name || "image"}</DialogTitle>
+                                                    <DialogContent className="max-w-4xl p-2 bg-black/90 border-0">
+                                                        <Image
+                                                            src={msg.file_url || "/placeholder.svg"}
+                                                            alt={msg.file_name || "image"}
+                                                            width={800}
+                                                            height={800}
+                                                            unoptimized
+                                                            className="rounded-lg w-full h-auto"
+                                                        />
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </>
                                         ) : msg.file_type === "video" ? (
                                             <video
                                                 src={msg.file_url}
@@ -290,7 +420,9 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                                             </a>
                                         )
                                     ) : (
-                                        <span className="break-words">{msg.message}</span>
+                                        <span className="break-words">
+                                            {highlightText(msg.message ?? "", searchQuery)}
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -303,19 +435,26 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                 <div className="p-3 border-t border-emerald-500/20 bg-black/20 backdrop-blur-sm">
                     <div className="flex gap-2 justify-center">
                         <label className="cursor-pointer">
+                            <input
+                                id="file-upload"
+                                type="file"
+                                className="hidden"
+                                accept="image/*,video/*,audio/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    handleFileUpload(file)
+                                    e.target.value = ""
+                                }}
+                            />
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => document.getElementById("file-upload")?.click()}
                                 className="h-10 w-10 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30"
                             >
                                 <ImageIcon className="w-5 h-5 text-emerald-400" />
                             </Button>
-                            <input
-                                type="file"
-                                className="hidden"
-                                accept="image/*,video/*,audio/*"
-                                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                            />
                         </label>
 
                         <Button
@@ -327,14 +466,40 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                             <Mic className="w-5 h-5 text-blue-400" />
                         </Button>
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleRecordVideo}
-                            className="h-10 w-10 rounded-full bg-purple-500/20 hover:bg-purple-500/30"
-                        >
-                            <Video className="w-5 h-5 text-purple-400" />
-                        </Button>
+                        {/* Video Recording Button */}
+                        {!isVideoRecording ? (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleRecordVideo}
+                                className="shrink-0 h-9 w-9 rounded-full bg-purple-500/20 hover:bg-purple-500/30"
+                            >
+                                <Video className="w-4 h-4 text-purple-400" />
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                {/* Stop Upload Video */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleStopRecording}
+                                    className="shrink-0 h-9 w-9 rounded-full bg-green-500/20 hover:bg-green-500/30 animate-pulse"
+                                >
+                                    <span className="text-green-400"></span>
+                                </Button>
+
+                                {/* Cancel Video Recording */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleCancelVideoRecording}
+                                    className="shrink-0 h-9 w-9 rounded-full bg-red-500/20 hover:bg-red-500/30 animate-pulse"
+                                >
+                                    <span className="text-red-700"><X className="w-5" /></span>
+                                </Button>
+                            </div>
+                        )}
+
 
                         <Button
                             variant="ghost"
@@ -349,7 +514,7 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
             )}
 
             {/* Input Chat */}
-            <div className="p-3 border-t border-emerald-500/20 bg-black/20 backdrop-blur-sm">
+            <div className="border-t border-emerald-500/20 bg-black/30 backdrop-blur-md z-50 p-3">
                 <div className="flex gap-2 items-end">
                     {/* Toggle Actions Button */}
                     <Button
@@ -367,7 +532,26 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                     </Button>
 
                     {/* Voice Recording Button */}
-                    {!isRecording ? (
+                    {isRecording ? (
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleStopRecording}
+                                className="h-9 w-9 rounded-full bg-red-500/20 hover:bg-red-500/30 animate-pulse"
+                            >
+                                <span className="text-red-400">⏹</span>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleCancelRecording}
+                                className="h-9 w-9 rounded-full bg-gray-500/20 hover:bg-gray-500/30"
+                            >
+                                <X className="w-4 h-4 text-red-700" />
+                            </Button>
+                        </div>
+                    ) : (
                         <Button
                             variant="ghost"
                             size="icon"
@@ -376,16 +560,20 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                         >
                             <Mic className="w-4 h-4 text-blue-400" />
                         </Button>
-                    ) : (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleStopRecording}
-                            className="shrink-0 h-9 w-9 rounded-full bg-red-500/20 hover:bg-red-500/30 animate-pulse"
-                        >
-                            <span className="text-red-400">⏹</span>
-                        </Button>
                     )}
+
+
+                    {!isVideoRecording ? (
+                        <Button variant="ghost"
+                            size="icon"
+                            className="shrink-0 h-9 w-9 rounded-full bg-red-500/20 hover:bg-red-500/30" onClick={handleRecordVideo}><Video /></Button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button size="icon" className="shrink-0 h-9 w-9 rounded-full bg-green-500/20 hover:bg-green-500/30" onClick={handleStopVideoRecording}><Check className="w-4 h-4 text-blue-400" /></Button>
+                            <Button size={'icon'} className="shrink-0 h-9 w-9 rounded-full bg-red-500/20 hover:bg-red-500/30" onClick={handleCancelVideoRecording}><X className="w-4 h-4 text-red-700" /></Button>
+                        </div>
+                    )}
+
 
                     {/* Input Text */}
                     <div className="flex-1 flex gap-2">

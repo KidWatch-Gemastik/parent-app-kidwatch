@@ -1,381 +1,111 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createSupabaseServer } from "@/lib/supabase-serverles";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import axios from "axios";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createSupabaseServer, getSupabaseAdmin } from '@/lib/supabase-serverles';
+import { getChildrenForParent, getRecentCallLogs, getRecentMessages, getLocations, getSafeZones } from '@/app/services/chatService';
+import { analyzeMediaSafe } from '@/app/services/mediaService';
+import { isInSafeZone } from '@/utils/geo';
+import { askGemini } from '@/app/services/aiService';
+import { cookies } from 'next/headers';
 
-// interface CallLog {
-//     child_id: string;
-//     timestamp: string;
-//     phone_number: string;
-//     type: string;
-//     duration: number;
-// }
+const bodySchema = z.object({ userId: z.string().min(1), question: z.string().min(1) });
 
-
-
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-// const cookieStore = await cookies();
-// const supabase = createSupabaseServer(cookieStore);
-
-function isInSafeZone(
-    lat: number,
-    lng: number,
-    zoneLat: number,
-    zoneLng: number,
-    radius: number
-) {
-    const R = 6371e3;
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
-    const dLat = toRad(zoneLat - lat);
-    const dLng = toRad(zoneLng - lng);
-
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(lat)) *
-        Math.cos(toRad(zoneLat)) *
-        Math.sin(dLng / 2) ** 2;
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c <= radius;
-}
-
-async function analyzeMedia(fileUrl: string, fileType: string): Promise<string> {
-    try {
-        const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
-        const base64Data = Buffer.from(response.data).toString("base64");
-
-        // Map fileType ke mimeType
-        let mimeType = "application/octet-stream";
-        if (fileType.startsWith("image")) mimeType = "image/png";
-        else if (fileType.startsWith("video")) mimeType = "video/webm";
-        else if (fileType.startsWith("audio")) mimeType = "audio/webm";
-
-        const result = await geminiModel.generateContent([
-            {
-                text: `
-Tolong analisis media berikut (${fileType}):
-1. Jika gambar atau video → cek apakah ada hal yang mencurigakan, kejanggalan, atau konten berbahaya.
-2. Jika audio → cek apakah ada kata-kata kasar, indikasi cyberbullying, atau nada mengancam.
-3. Jika teks/chat → cek apakah ada unsur cyberbullying atau kekerasan verbal.
-4. Berikan ringkasan singkat dalam bahasa Indonesia yang ramah untuk orang tua.
-                `,
-            },
-            {
-                inlineData: {
-                    mimeType,
-                    data: base64Data,
-                },
-            },
-        ]);
-
-        return result.response.text().trim() || "Tidak ada hasil analisis. ~ KiddyGoo";
-    } catch (err) {
-        console.error("Gemini media error:", err);
-        return "Gagal menganalisis media. ~ KiddyGoo";
-    }
-}
-
-
-async function getRecentMessages(
-    supabase: ReturnType<typeof createSupabaseServer>,
-    childId: string,
-    limit = 5
-) {
-
-    const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("child_id, created_at, file_type, file_url, message", childId)
-        .order("created_at", { ascending: false })
-        .limit(limit);
-    if (error) {
-        console.error("Error fetching messages:", error);
-        return [];
-    }
-    return data || [];
-}
-
-// Helper QA pakai Gemini
-async function askGemini(context: string, question: string): Promise<string> {
-    try {
-        const prompt = `
-Berikan jawaban singkat & jelas berdasarkan data berikut:
-
-Context:
-${context}
-
-Pertanyaan:
-${question}
-    `;
-
-        const result = await geminiModel.generateContent(prompt);
-        const text = result.response.text();
-
-        return text?.trim()
-            ? `${text} ~ KiddyGoo`
-            : "Data tidak tersedia. ~ KiddyGoo";
-    } catch (err) {
-        console.error("Gemini error:", err);
-        return "Halo, Bunda/Papa! Saat ini KiddyGoo belum bisa memproses pertanyaan ini. 😊";
-    }
-}
-
-
+const allowedOrigins = ["https://parent-kiddygoo.vercel.app", "http://localhost:3000"]
 
 export async function POST(req: Request) {
-    const { userId, question } = await req.json();
-    const q = question?.trim().toLowerCase();
-    const cookieStore = await cookies();
-    const supabase = createSupabaseServer(cookieStore);
+    try {
+        const json = await req.json();
+        const parsed = bodySchema.safeParse(json);
+        if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
 
+        const { userId, question } = parsed.data;
 
+        // Auth: ensure requester is owner of userId (implement your own check)
+        // For example: extract supabase session from cookies and verify sub === userId
+        const cookie = await cookies();
+        const supabaseClient = createSupabaseServer(cookie);
+        const { data: session } = await supabaseClient.auth.getSession();
+        if (!session?.session || session.session.user.id !== userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    const { data: children } = await supabase
-        .from("children")
-        .select("*")
-        .eq("parent_id", userId);
+        // Fetch children & data
+        const children = await getChildrenForParent(userId);
+        if (!children.length) return NextResponse.json({ answer: 'Tidak ada data anak. ~ KiddyGoo' });
+        const childIds = children.map(c => c.id);
 
-    if (!children?.length) {
-        return NextResponse.json({ answer: "Tidak ada data anak. ~ KiddyGoo" });
-    }
-
-
-    const childIds = children.map((c) => c.id);
-
-    const [{ data: callLogs }, { data: messages }, { data: locations }, { data: safeZones }] =
-        await Promise.all([
-            supabase
-                .from("call_logs")
-                .select("child_id, timestamp, phone_number, type, duration")
-                .in("child_id", childIds)
-                .order("timestamp", { ascending: false })
-                .limit(20),
-            supabase
-                .from("chat_messages")
-                .select("child_id, timestamp, file_type, file_url, message")
-                .in("child_id", childIds)
-                .order("timestamp", { ascending: false })
-                .limit(20),
-            supabase
-                .from("locations")
-                .select("child_id, latitude, longitude, timestamp")
-                .in("child_id", childIds)
-                .order("timestamp", { ascending: false })
-                .limit(childIds.length),
-            supabase
-                .from("safe_zones")
-                .select("child_id, name, latitude, longitude, radius")
-                .in("child_id", childIds),
+        const [callLogs, messages, locations, safeZones] = await Promise.all([
+            getRecentCallLogs(childIds, 20),
+            getRecentMessages(childIds, 20),
+            getLocations(childIds, 20),
+            getSafeZones(childIds),
         ]);
 
-    let answer = "";
+        let answer = '';
+        const q = question.toLowerCase();
 
-    // Lokasi anak
-    if (/lokasi|dimana/i.test(question)) {
-        if (!locations?.length) {
-            answer = "Lokasi anak belum terdeteksi. ~ KiddyGoo";
-        } else {
-            const locTexts = locations.map((loc) => {
-                const child = children.find((c) => c.id === loc.child_id);
-                const mapsLink = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
-                return `
-👶 Anak: ${child?.name || "Tidak diketahui"}
-📍 Lokasi: ${loc.latitude}, ${loc.longitude}
-🗺️ Google Maps: ${mapsLink}
-⏰ Terakhir terdeteksi: ${new Date(loc.timestamp).toLocaleString()}
-      `.trim();
-            });
-
-            answer = "📍 Lokasi Anak Terbaru:\n\n" + locTexts.join("\n\n") + "\n\n~ KiddyGoo";
-        }
-    }
-
-    // Log panggilan
-    else if (/panggilan|telepon|call/i.test(question)) {
-        if (!callLogs?.length) {
-            answer = "Tidak ada log panggilan terbaru. ~ KiddyGoo";
-        } else {
-            const recentCalls = callLogs.slice(0, 5).map((l) => {
-                return `
-📞 Waktu   : ${new Date(l.timestamp).toLocaleString()}
-   Jenis   : ${l.type}
-   Nomor   : ${l.phone_number}
-   Durasi  : ${l.duration}s
-      `.trim();
-            });
-
-            answer = "📞 Log Panggilan Terbaru:\n\n" + recentCalls.join("\n\n") + "\n\n~ KiddyGoo";
-        }
-    }
-
-    // Pesan & Media
-    //     else if (/pesan|chat|media|gambar|audio|video/i.test(question)) {
-    //         const msgResults: string[] = [];
-
-    //         for (const child of children) {
-    //             const childMessages = await getRecentMessages(supabase, child.id, 5);
-
-    //             if (!childMessages?.length) continue;
-
-    //             const formatted = childMessages.map((m) => {
-    //                 const time = new Date(m.created_at || m.timestamp).toLocaleString();
-
-    //                 if (m.file_url && m.file_type?.startsWith("image/")) {
-    //                     return `🖼️ [${time}]
-    // Jenis : Gambar
-    // Nama  : ${m.file_name || "-"}
-    // Link  : ${m.file_url}`;
-    //                 }
-
-    //                 if (m.file_url && m.file_type?.startsWith("audio/")) {
-    //                     return `🎵 [${time}]
-    // Jenis : Audio
-    // Nama  : ${m.file_name || "-"}
-    // Link  : ${m.file_url}`;
-    //                 }
-
-    //                 if (m.file_url && m.file_type?.startsWith("video/")) {
-    //                     return `🎬 [${time}]
-    // Jenis : Video
-    // Nama  : ${m.file_name || "-"}
-    // Link  : ${m.file_url}`;
-    //                 }
-
-    //                 return `💬 [${time}]
-    // Jenis : Pesan Teks
-    // Isi   : ${m.message}`;
-    //             });
-
-    //             msgResults.push(`👶 Anak: ${child.name}\n\n${formatted.join("\n\n")}`);
-    //         }
-
-    //         answer = msgResults.length
-    //             ? "💬 Pesan & Media Terbaru:\n\n" + msgResults.join("\n\n---\n\n") + "\n\n~ KiddyGoo"
-    //             : "Tidak ada pesan terbaru dari anak. ~ KiddyGoo";
-    //     }
-
-    // Analisis Media
-    else if (/analisis media|analisa media|cek media|analyze media/i.test(question)) {
-        const mediaResults: string[] = [];
-
-        for (const child of children) {
-            const childMessages = await getRecentMessages(supabase, child.id, 5);
-
-            console.log("Child Messages:", childMessages);
-
-            if (!childMessages?.length) continue;
-
-            const medias = childMessages.filter(
-                (m) =>
-                    m.file_url &&
-                    ["image", "audio", "video"].includes((m.file_type || "").toLowerCase())
-            );
-
-
-            if (!medias.length) continue;
-
-            const analyses = await Promise.all(
-                medias.map(async (m) => {
-                    const time = new Date(m.created_at || m.timestamp).toLocaleString();
-                    const analysis = await analyzeMedia(m.file_url, m.file_type);
-
-                    return `[${time}]
-Jenis : ${m.file_type}
-Nama  : ${m.file_name || "-"}
-Link  : ${m.file_url}
-
-📊 Hasil Analisis:
-${analysis}`;
-                })
-            );
-
-            mediaResults.push(`👶 Anak: ${child.name}\n\n${analyses.join("\n\n")}`);
-        }
-
-        answer = mediaResults.length
-            ? "🔎 Hasil Analisis Media Terbaru:\n\n" + mediaResults.join("\n\n---\n\n") + "\n\n~ KiddyGoo"
-            : "Tidak ada media terbaru dari anak untuk dianalisis. ~ KiddyGoo";
-    }
-
-
-
-
-    // Default: QA via Gemini
-    if (!answer) {
-        const contextList = children.map((child) => {
-            const childLogs = callLogs?.filter((l) => l.child_id === child.id) || [];
-            const childMessages = messages?.filter((m) => m.child_id === child.id) || [];
-            const childLocation = locations?.find((loc) => loc.child_id === child.id);
-            const childZones = safeZones?.filter((z) => z.child_id === child.id) || [];
-
-            // Status Safe Zone
-            let safeZoneStatus = "📍 Lokasi anak belum terdeteksi.";
-            if (childLocation && childZones.length) {
-                const zone = childZones.find((z) =>
-                    isInSafeZone(
-                        childLocation.latitude,
-                        childLocation.longitude,
-                        z.latitude,
-                        z.longitude,
-                        z.radius
-                    )
-                );
-                safeZoneStatus = zone
-                    ? `✅ Anak berada di dalam safe zone: ${zone.name}`
-                    : "⚠️ Anak berada di luar semua safe zone!";
+        if (/lokasi|dimana/i.test(q)) {
+            if (!locations.length) answer = 'Lokasi anak belum terdeteksi. ~ KiddyGoo';
+            else {
+                const locTexts = locations.map(loc => {
+                    const child = children.find(c => c.id === loc.child_id);
+                    const mapsLink = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
+                    return `👶 Anak: ${child?.name || 'Tidak diketahui'}\n📍 Lokasi: ${loc.latitude}, ${loc.longitude}\n🗺️ Google Maps: ${mapsLink}\n⏰ Terakhir terdeteksi: ${new Date(loc.timestamp).toLocaleString()}`;
+                });
+                answer = '📍 Lokasi Anak Terbaru:\n\n' + locTexts.join('\n\n') + '\n\n~ KiddyGoo';
             }
+        } else if (/panggilan|telepon|call/i.test(q)) {
+            if (!callLogs.length) answer = 'Tidak ada log panggilan terbaru. ~ KiddyGoo';
+            else {
+                const recentCalls = callLogs.slice(0, 5).map(l => `📞 ${new Date(l.timestamp).toLocaleString()} | ${l.type} | ${l.phone_number} | ${l.duration}s`);
+                answer = '📞 Log Panggilan Terbaru:\n\n' + recentCalls.join('\n') + '\n\n~ KiddyGoo';
+            }
+        } else if (/analisis media|analisa media|cek media|analyze media/i.test(q)) {
+            const mediaResults: string[] = [];
+            for (const child of children) {
+                const childMessages = messages.filter(m => m.child_id === child.id).slice(0, 5);
+                const medias = childMessages.filter(m => m.file_url && (m.file_type || '').startsWith('image') || m.file_type?.startsWith('audio') || m.file_type?.startsWith('video'));
+                if (!medias.length) continue;
+                const analyses = await Promise.all(medias.map(async m => {
+                    const time = new Date(m.created_at).toLocaleString();
+                    const analysis = await analyzeMediaSafe(m.file_url, m.file_type);
+                    return `[${time}]\nJenis : ${m.file_type}\nNama  : ${m.file_name || '-'}\nLink  : ${m.file_url}\n\n📊 Hasil Analisis:\n${analysis || 'Gagal analisis.'}`;
+                }));
+                mediaResults.push(`👶 Anak: ${child.name}\n\n${analyses.join('\n\n')}`);
+            }
+            answer = mediaResults.length ? '🔎 Hasil Analisis Media Terbaru:\n\n' + mediaResults.join('\n\n---\n\n') + '\n\n~ KiddyGoo' : 'Tidak ada media terbaru dari anak untuk dianalisis. ~ KiddyGoo';
+        }
 
-            // Log Panggilan
-            const callContext =
-                childLogs.length > 0
-                    ? childLogs
-                        .slice(0, 5)
-                        .map(
-                            (l) =>
-                                `📞 ${new Date(l.timestamp).toLocaleString()} | ${l.type} | ${l.phone_number} | ${l.duration}s`
-                        )
-                        .join("\n")
-                    : "Tidak ada panggilan.";
+        if (!answer) {
+            // build context
+            const contextList = children.map(child => {
+                const childLogs = callLogs.filter(l => l.child_id === child.id) || [];
+                const childMessages = messages.filter(m => m.child_id === child.id) || [];
+                const childLocation = locations.find(loc => loc.child_id === child.id);
+                const childZones = safeZones.filter(z => z.child_id === child.id) || [];
+                let safeZoneStatus = '📍 Lokasi anak belum terdeteksi.';
+                if (childLocation && childZones.length) {
+                    const zone = childZones.find(z => isInSafeZone(childLocation.latitude, childLocation.longitude, z.latitude, z.longitude, z.radius));
+                    safeZoneStatus = zone ? `✅ Anak berada di dalam safe zone: ${zone.name}` : '⚠️ Anak berada di luar semua safe zone!';
+                }
+                const callContext = childLogs.length ? childLogs.slice(0, 5).map(l => `📞 ${new Date(l.timestamp).toLocaleString()} | ${l.type} | ${l.phone_number} | ${l.duration}s`).join('\n') : 'Tidak ada panggilan.';
+                const chatContext = childMessages.length ? childMessages.slice(0, 5).map(m => `💬 ${new Date(m.created_at).toLocaleString()} | ${m.file_type || 'teks'} | ${m.message || m.file_url}`).join('\n') : 'Tidak ada pesan.';
+                return `👶 Anak: ${child.name}\n\n${safeZoneStatus}\n\n📞 Log Panggilan Terbaru:\n${callContext}\n\n💬 Pesan & Media Terbaru:\n${chatContext}`;
+            });
 
-            // Pesan & Media
-            const chatContext =
-                childMessages.length > 0
-                    ? childMessages
-                        .slice(0, 5)
-                        .map(
-                            (m) =>
-                                `💬 ${new Date(m.timestamp).toLocaleString()} | ${m.file_type || "teks"} | ${m.message || m.file_url
-                                }`
-                        )
-                        .join("\n")
-                    : "Tidak ada pesan.";
+            answer = await askGemini(contextList.join('\n\n---\n\n'), question);
+        }
 
-            return `
-👶 Anak: ${child.name}
+        // Save log (non-blocking)
+        try {
+            const admin = getSupabaseAdmin();
+            await admin.from('ai_chat_logs').insert({ user_id: userId, question, answer, created_at: new Date().toISOString() });
+        } catch (e) {
+            console.error('Failed to save ai_chat_logs', e);
+        }
 
-${safeZoneStatus}
-
-📞 Log Panggilan Terbaru:
-${callContext}
-
-💬 Pesan & Media Terbaru:
-${chatContext}
-    `.trim();
-        });
-
-        answer = await askGemini(contextList.join("\n\n---\n\n"), question);
+        return NextResponse.json({ answer });
+    } catch (err) {
+        console.error('API error', err);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-
-
-    // Simpan log
-    await supabase.from("ai_chat_logs").insert({
-        user_id: userId,
-        question,
-        answer,
-    });
-
-    return NextResponse.json({ answer });
 }

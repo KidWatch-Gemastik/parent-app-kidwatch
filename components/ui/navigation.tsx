@@ -89,7 +89,7 @@ export default function Navigation({
     {
       title: "Real-time Chat",
       href: "#chat",
-      description: "Komunikasi langsung dengan anak melalui chat aman dan video call HD berkualitas tinggi",
+      description: "Komunikasi langsung dengan anak melalui chat aman dan realtime lintas device",
       icon: MessageCircle,
     },
     {

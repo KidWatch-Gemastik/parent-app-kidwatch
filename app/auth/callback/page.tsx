@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export default function AuthCallbackPage() {
     const router = useRouter();
-    const { supabase } = useSupabase(); // ✅ ambil supabase client
+    const { supabase } = useSupabase(); // ambil supabase client
     const [status, setStatus] = useState<"processing" | "success" | "error">(
         "processing"
     );

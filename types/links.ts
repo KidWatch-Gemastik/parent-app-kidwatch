@@ -14,6 +14,6 @@ export const guestLinks: NavbarLink[] = [
 
 export const authLinks: NavbarLink[] = [
     { text: "Dashboard", href: "/dashboard" },
-    { text: "Profil", href: "/profile" },
-    { text: "Pengaturan", href: "/settings" },
+    { text: "Profil", href: "/dashboard/profile" },
+    { text: "Pengaturan", href: "/dashboard/preferences" },
 ];
