@@ -1,13 +1,14 @@
-import UserProfileDropdown from "@/components/layouts/UserProfileDropdown"
-import { Sparkles } from "lucide-react"
-
+import UserProfileDropdown from "@/components/layouts/UserProfileDropdown";
+import { Sparkles } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 type header = {
-    title: string
-    description?: string
-    subtitle?: string
-    className?: string
-}
+    title: string;
+    description?: string;
+    subtitle?: string;
+    className?: string;
+};
+
 export default function DashboardHeader({ title, description, subtitle, className }: header) {
     return (
         <header className={`flex justify-between items-center mb-6 ${className}`}>
@@ -21,7 +22,11 @@ export default function DashboardHeader({ title, description, subtitle, classNam
                     </div>
                 )}
             </div>
-            <UserProfileDropdown />
+
+            <div className="flex items-center gap-4">
+                <NotificationBell />
+                <UserProfileDropdown />
+            </div>
         </header>
-    )
+    );
 }

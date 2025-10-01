@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { getDeviceToken, onMessageListener } from "@/lib/firebase";
+import { analyzeText } from "@/utils/nlp";
 
 export default function ParentDashboard() {
-    const [deviceToken, setDeviceToken] = useState<string | null>(null);
+    const [deviceToken, setDeviceToken] = useState<string | undefined>(undefined);
     const [permissionStatus, setPermissionStatus] = useState<string>("default");
-    const [textInput, setTextInput] = useState<string>(""); // input teks user
-    const [parentEmail, setParentEmail] = useState<string>(""); // optional email
+    const [textInput, setTextInput] = useState<string>("");
+    const [parentEmail, setParentEmail] = useState<string>("");
     const [responseMessage, setResponseMessage] = useState<string>("");
 
     useEffect(() => {
@@ -38,20 +39,10 @@ export default function ParentDashboard() {
         }
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/analyze-text", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    text: textInput,
-                    parent_email: parentEmail || undefined,
-                    parent_token: deviceToken || undefined,
-                }),
-            });
-
-            const data = await res.json();
-            setResponseMessage(JSON.stringify(data, null, 2)); // tampilkan response dari BE
+            const data = await analyzeText(textInput, parentEmail, deviceToken);
+            setResponseMessage(JSON.stringify(data, null, 2));
         } catch (err) {
-            console.error(err);
+            console.error("API Error:", err);
             setResponseMessage("❌ Terjadi error saat mengirim request");
         }
     };
@@ -61,7 +52,11 @@ export default function ParentDashboard() {
             <h1>Parent Dashboard</h1>
 
             {permissionStatus !== "granted" && <p>Silakan aktifkan notifikasi</p>}
-            {deviceToken && <p><strong>Device Token:</strong> {deviceToken}</p>}
+            {deviceToken && (
+                <p>
+                    <strong>Device Token:</strong> {deviceToken}
+                </p>
+            )}
 
             <div style={{ marginTop: "1rem" }}>
                 <input
@@ -82,7 +77,15 @@ export default function ParentDashboard() {
             </div>
 
             {responseMessage && (
-                <pre style={{ marginTop: "1rem", background: "#000", padding: "1rem" }}>
+                <pre
+                    style={{
+                        marginTop: "1rem",
+                        background: "#000",
+                        color: "#0f0",
+                        padding: "1rem",
+                        borderRadius: "6px",
+                    }}
+                >
                     {responseMessage}
                 </pre>
             )}

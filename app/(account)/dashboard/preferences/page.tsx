@@ -426,13 +426,12 @@ export default function PreferencesPage() {
                                                         <SelectContent className="bg-gray-800 border-gray-600">
                                                             <SelectItem value="id">Bahasa Indonesia</SelectItem>
                                                             <SelectItem value="en">English</SelectItem>
-                                                            <SelectItem value="ms">Bahasa Malaysia</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
+                                            {/* <div className="flex items-center justify-between p-4 bg-gray-800/40 rounded-xl border border-gray-700/50">
                                                 <div className="flex items-center space-x-3">
                                                     <div className="w-10 h-10 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
                                                         <Wifi className="h-5 w-5 text-white" />
@@ -447,7 +446,7 @@ export default function PreferencesPage() {
                                                     onCheckedChange={(checked) => updatePreference("offlineMode", checked)}
                                                     className="data-[state=checked]:bg-emerald-500"
                                                 />
-                                            </div>
+                                            </div> */}
                                         </CardContent>
                                     </Card>
 

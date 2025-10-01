@@ -10,9 +10,22 @@ import { cookies } from 'next/headers';
 const bodySchema = z.object({ userId: z.string().min(1), question: z.string().min(1) });
 
 const allowedOrigins = ["https://parent-kiddygoo.vercel.app", "http://localhost:3000"]
+const SERVER_API_KEY = process.env.NEXT_PUBLIC_KIDDYGOO_API_KEY;
 
 export async function POST(req: Request) {
     try {
+        // ----- CORS & API Key check -----
+        const origin = req.headers.get("origin");
+        if (!origin || !allowedOrigins.includes(origin)) {
+            return NextResponse.json({ error: "Origin not allowed" }, { status: 403 });
+        }
+
+        const apiKey = req.headers.get("x-kiddygoo-key");
+        if (!apiKey || apiKey !== SERVER_API_KEY) {
+            return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+        }
+
+        // ----- Body parsing & validation -----
         const json = await req.json();
         const parsed = bodySchema.safeParse(json);
         if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });

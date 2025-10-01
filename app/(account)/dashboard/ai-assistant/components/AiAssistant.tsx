@@ -137,7 +137,9 @@ export default function AIAssistant() {
         try {
             const res = await fetch("/api/ai-assistant", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                     'x-kiddygoo-key': process.env.NEXT_PUBLIC_KIDDYGOO_API_KEY!,
+                 },
                 body: JSON.stringify({ question: ask, userId: user.id }),
             })
 
