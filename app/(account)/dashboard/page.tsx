@@ -196,12 +196,24 @@ export default function DashboardPage() {
                                         <CardContent className="p-5">
                                             <div className="flex items-center space-x-4">
                                                 <Avatar className="ring-2 ring-emerald-500/30">
-                                                    <AvatarImage
-                                                        src={child.avatar || `/placeholder.svg?height=40&width=40&text=${child.name[0]}`}
-                                                    />
-                                                    <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white font-bold">
-                                                        {child.name[0]}
-                                                    </AvatarFallback>
+                                                    <Avatar className="ring-2 ring-emerald-500/30">
+                                                        <AvatarImage
+                                                            src={
+                                                                child.avatar
+                                                                    ? child.avatar
+                                                                    : child.sex === "Laki-laki"
+                                                                        ? `https://api.dicebear.com/6.x/avataaars/svg?seed=${child.name.replace}&gender=male`
+                                                                        : `https://api.dicebear.com/6.x/avataaars/svg?seed=${child.name.split}&gender=female`
+                                                            }
+                                                            alt={child.name}
+                                                        />
+                                                        <AvatarFallback className={cn(
+                                                            "text-white font-bold",
+                                                            child.sex === "male" ? "bg-blue-500" : "bg-pink-500"
+                                                        )}>
+                                                            {child.name[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
                                                 </Avatar>
                                                 <div>
                                                     <h3 className="font-bold text-white">{child.name}</h3>

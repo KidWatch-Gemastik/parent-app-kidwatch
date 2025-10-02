@@ -31,6 +31,10 @@ import {
     Crown,
     Flame,
     CloudLightningIcon as Lightning,
+    Award,
+    Trophy,
+    CheckCheck,
+    SquareArrowOutDownRightIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -362,10 +366,6 @@ export default function KiddyGooLanding() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 md:gap-8 text-sm text-gray-400 px-4 lg:px-0">
-                                <div className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
-                                    <CheckCircle className="w-4 h-4 text-emerald-400 animate-pulse" />
-                                    <span>Gratis 30 hari</span>
-                                </div>
                                 <div className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
                                     <CheckCircle className="w-4 h-4 text-emerald-400 animate-pulse" />
                                     <span>Tanpa kartu kredit</span>
@@ -756,6 +756,96 @@ export default function KiddyGooLanding() {
                     </div>
                 </section>
 
+
+
+                <section className="container mx-auto px-4 md:px-10 py-12 md:py-20">
+                    <div className="text-center">
+                        <Badge className="mb-4 bg-violet-500/20 text-violet-400 border-violet-500/30 animate-pulse">
+                            <Sparkles className="w-3 h-3 mr-1 animate-spin" />
+                            Ongoing Feature
+                        </Badge>
+
+                        <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white mb-4 md:mb-6 px-4">
+                            Inovasi <span className="bg-gradient-to-r from-violet-400 to-rose-400 bg-clip-text text-transparent">
+                                Terbaru
+                            </span>{" "}
+                            untuk <span className="bg-gradient-to-r from-emerald-400 to-mint-400 bg-clip-text text-transparent">
+                                Keluarga Aman Digital
+                            </span>
+                            <div className="inline-block ml-2 animate-bounce">🚀</div>
+                        </h2>
+
+                        <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto px-4">
+                            Fitur-fitur cerdas yang sedang kami kembangkan untuk membantu orang tua
+                            menjaga keseimbangan digital anak dengan cara yang aman, interaktif, dan menyenangkan.
+                        </p>
+                    </div>
+
+
+                    {/* Ongoing Feature Section */}
+                    <CardContent className="p-8 md:p-12 relative">
+                        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                            {/* Geofence */}
+                            <div className="group p-8 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 text-center shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.03] transition-all duration-300">
+                                <Badge className="mb-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                                    🛡️ Geofence
+                                </Badge>
+                                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-emerald-300 transition">
+                                    Geofence & Notifikasi Zona
+                                </h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">
+                                    Orang tua set lokasi aman (rumah, sekolah, tempat les). <br />
+                                    Mengirimkan notifikasi real-time bila anak masuk/keluar zona.
+                                </p>
+                                <div className="mt-6 flex items-center justify-center gap-2 text-emerald-400 font-medium text-sm animate-pulse">
+                                    <CheckCheck className="w-4 h-4" />
+                                    <span>Sudah Implementasi</span>
+                                </div>
+                            </div>
+
+                            {/* Deteksi Pola Digital */}
+                            <div className="group p-8 rounded-2xl bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent border border-rose-500/30 text-center shadow-lg hover:shadow-rose-500/30 hover:scale-[1.03] transition-all duration-300">
+                                <Badge className="mb-4 bg-rose-500/20 text-rose-400 border-rose-500/30">
+                                    ⚠️ Pola Digital
+                                </Badge>
+                                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-rose-300 transition">
+                                    Deteksi Pola Digital & Alert Overuse
+                                </h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">
+                                    Monitor screen time anak. <br />
+                                    Memberikan Alert ke orang tua bila ada pemakaian abnormal / berlebihan.
+                                </p>
+                                <div className="mt-6 flex items-center justify-center gap-2 text-rose-400 font-medium text-sm animate-bounce">
+                                    <SquareArrowOutDownRightIcon className="w-4 h-4" />
+                                    <span>On Going</span>
+                                </div>
+                            </div>
+
+                            {/* Gamifikasi */}
+                            <div className="group p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent border border-violet-500/30 text-center shadow-lg hover:shadow-violet-500/30 hover:scale-[1.03] transition-all duration-300">
+                                <Badge className="mb-4 bg-violet-500/20 text-violet-400 border-violet-500/30">
+                                    🎮 Gamifikasi
+                                </Badge>
+                                <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-violet-300 transition">
+                                    Gamifikasi Digital Sehat
+                                </h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">
+                                    Anak dapat <span className="font-semibold text-violet-300">badge</span> atau <span className="font-semibold text-violet-300 mr-2">reward</span>
+                                     Jika berhasil mengurangi screen time, atau lebih banyak membuka aplikasi edukasi.
+                                </p>
+                                <div className="mt-6 flex items-center justify-center gap-2 text-violet-400 font-medium text-sm animate-bounce">
+                                    <SquareArrowOutDownRightIcon className="w-4 h-4" />
+                                    <span>On Going</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </CardContent>
+                </section>
+
+
+
                 {/* Enhanced CTA Section */}
                 <section className="container mx-auto px-4 md:px-8 lg:px-10 py-12 md:py-20">
                     <Card className="border border-emerald-500/20 shadow-2xl bg-gradient-to-r from-gray-900/80 to-emerald-900/20 backdrop-blur-xl overflow-hidden relative hover:scale-105 transition-all duration-500">
@@ -772,6 +862,7 @@ export default function KiddyGooLanding() {
                                 </div>
                             </>
                         )}
+
 
                         <CardContent className="p-8 md:p-12 text-center relative">
                             <div className="max-w-4xl mx-auto">
