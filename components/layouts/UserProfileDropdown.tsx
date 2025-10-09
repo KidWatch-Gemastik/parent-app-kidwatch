@@ -110,10 +110,10 @@ export default function UserProfileDropdown() {
                         <DropdownMenuItem className="flex-col items-start gap-1">
                             <div className="flex items-center gap-1">
                                 <Rocket className="h-4 w-4" />
-                                <span className="font-medium leading-none">Upgrade Plan</span>
+                                <span className="font-medium leading-none">Hubungkan Anak</span>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Kamu Sedang Menggunakan Free Tier.
+                                Akses fitur menarik dan monitoring anak anda dan cegah cyber bullying dengan KiddyGoo.
                             </p>
                         </DropdownMenuItem>
 
