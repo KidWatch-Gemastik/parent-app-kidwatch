@@ -38,26 +38,32 @@ export function usePreferences() {
     const [preferences, setPreferences] = useState<PreferencesState>(defaultPreferences);
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Load preferences from localStorage on mount
+    // Load or initialize preferences
     useEffect(() => {
         const saved = localStorage.getItem("kiddygoo-preferences");
+
         if (saved) {
             try {
-                const parsedPreferences = JSON.parse(saved);
+                const parsed = JSON.parse(saved);
                 setPreferences({
                     ...defaultPreferences,
-                    ...parsedPreferences,
-                    emailNotifications: true,   // override supaya selalu aktif
-                    pushNotifications: true,    // override supaya selalu aktif
-                    locationTracking: true,     // override supaya selalu aktif
+                    ...parsed,
+                    emailNotifications: true,
+                    pushNotifications: true,
+                    locationTracking: true,
                 });
             } catch (error) {
                 console.error("Failed to parse saved preferences:", error);
+                localStorage.setItem("kiddygoo-preferences", JSON.stringify(defaultPreferences));
             }
+        } else {
+            // jika belum ada di localStorage, auto push default data
+            localStorage.setItem("kiddygoo-preferences", JSON.stringify(defaultPreferences));
+            setPreferences(defaultPreferences);
         }
     }, []);
 
-    // Apply theme changes to document
+    // Apply theme changes dynamically
     useEffect(() => {
         const root = document.documentElement;
 
@@ -74,16 +80,16 @@ export function usePreferences() {
         }
     }, [preferences.theme, preferences.darkMode]);
 
-    const updatePreference = <K extends keyof PreferencesState>(key: K, value: PreferencesState[K]) => {
-        // override agar emailNotifications, pushNotifications, & locationTracking selalu true
+    const updatePreference = <K extends keyof PreferencesState>(
+        key: K,
+        value: PreferencesState[K]
+    ) => {
         if (key === "emailNotifications" || key === "pushNotifications" || key === "locationTracking") return;
-
         setPreferences((prev) => ({ ...prev, [key]: value }));
         setHasChanges(true);
     };
 
     const savePreferences = () => {
-        // pastikan email, push, locationTracking selalu aktif
         const savedPreferences = {
             ...preferences,
             emailNotifications: true,
@@ -94,7 +100,6 @@ export function usePreferences() {
         setPreferences(savedPreferences);
         setHasChanges(false);
 
-        // Show success notification
         if (typeof window !== "undefined" && "Notification" in window) {
             if (Notification.permission === "granted" && preferences.pushNotifications) {
                 new Notification("Preferences Saved", {
@@ -106,12 +111,12 @@ export function usePreferences() {
     };
 
     const resetPreferences = () => {
+        localStorage.setItem("kiddygoo-preferences", JSON.stringify(defaultPreferences));
         setPreferences(defaultPreferences);
-        localStorage.removeItem("kiddygoo-preferences");
         setHasChanges(false);
     };
 
-    // Request notification permission saat pushNotifications aktif
+    // Request notification permission once on mount
     useEffect(() => {
         if (typeof window !== "undefined" && "Notification" in window) {
             if (Notification.permission === "default") {

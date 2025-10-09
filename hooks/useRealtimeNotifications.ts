@@ -6,233 +6,243 @@ import { getDeviceToken } from "@/lib/firebase";
 import { toast } from "sonner";
 
 export interface Notification {
-    id: string;
-    child_id: string;
-    title: string | null;
-    body: string | null;
-    package_name?: string | null;
-    is_read: boolean;
-    ai_analysis?: {
-        text: string;
-        predicted_label: string;
-        score: number;
-        all_scores: any[];
-    };
+  id: string;
+  child_id: string;
+  title: string | null;
+  body: string | null;
+  package_name?: string | null;
+  is_read: boolean;
+  ai_analysis?: {
+    text: string;
+    predicted_label: string;
+    score: number;
+    all_scores: any[];
+  };
 }
 
 const LOCAL_STORAGE_KEY = "parent_notifications";
-const PREFERENCES_KEY = "kiddygoo-preferences";
 
 export function useRealtimeNotifications() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [childIds, setChildIds] = useState<string[]>([]);
-    const [deviceToken, setDeviceToken] = useState<string | undefined>(undefined);
-    const [parentEmail, setParentEmail] = useState<string | undefined>(undefined);
-    const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(false);
-    const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [childIds, setChildIds] = useState<string[]>([]);
+  const [deviceToken, setDeviceToken] = useState<string>();
+  const [parentEmail, setParentEmail] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
-    // -----------------------------
-    // Ambil parent preferences dari localStorage
-    // -----------------------------
-    useEffect(() => {
-        const prefsStr = localStorage.getItem(PREFERENCES_KEY);
-        if (!prefsStr) return;
-        try {
-            const prefs = JSON.parse(prefsStr);
-            if (prefs.parentEmail) setParentEmail(prefs.parentEmail);
-            if (prefs.emailNotifications) setEmailNotificationsEnabled(true);
-        } catch (err) {
-            console.error("Gagal parse kiddygoo-preferences:", err);
+  // ===============================
+  // 1️⃣ Ambil email parent dari session Supabase
+  // ===============================
+  useEffect(() => {
+    const fetchParentSession = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) throw error;
+
+        const email = session?.user?.email || "";
+        if (email) {
+          console.log("📧 Parent Email dari Session:", email);
+          setParentEmail(email);
+        } else {
+          console.warn("⚠️ Tidak ada email di session Supabase");
         }
-    }, []);
-
-    // -----------------------------
-    // Minta izin notifikasi otomatis saat pertama kali mount
-    // -----------------------------
-    useEffect(() => {
-        if ("Notification" in window && Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-    }, []);
-
-    // -----------------------------
-    // Ambil device token Firebase
-    // -----------------------------
-    useEffect(() => {
-        const fetchToken = async () => {
-            try {
-                const token = await getDeviceToken();
-                setDeviceToken(token!);
-            } catch (err) {
-                console.error("Gagal ambil device token:", err);
-            }
-        };
-        fetchToken();
-    }, []);
-
-    // -----------------------------
-    // Ambil daftar child ID
-    // -----------------------------
-    useEffect(() => {
-        const fetchChildren = async () => {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user?.id) return;
-
-                const { data, error } = await supabase
-                    .from("children")
-                    .select("id")
-                    .eq("parent_id", user.id);
-
-                if (error) throw error;
-
-                setChildIds(data?.map((c) => c.id) || []);
-            } catch (err) {
-                console.error("Gagal fetch children:", err);
-            }
-        };
-        fetchChildren();
-    }, []);
-
-    // -----------------------------
-    // Load notifikasi dari localStorage
-    // -----------------------------
-    useEffect(() => {
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) setNotifications(JSON.parse(saved));
-    }, []);
-
-    // -----------------------------
-    // Simpan notifikasi ke localStorage tiap update
-    // -----------------------------
-    useEffect(() => {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications));
-    }, [notifications]);
-
-    // -----------------------------
-    // Fungsi push notification browser
-    // -----------------------------
-    const showBrowserNotification = (title: string, body: string) => {
-        if (!("Notification" in window) || Notification.permission !== "granted") return;
-        new Notification(title, { body, icon: "/kiddygoo/KiddyGoo_Icon_Logo.png", silent: false });
+      } catch (err) {
+        console.error("❌ Gagal ambil session Supabase:", err);
+      }
     };
 
-    // -----------------------------
-    // Proses notifikasi: kirim ke AI, email (jika aktif), push, update DB + state
-    // -----------------------------
-    const processNotification = async (notif: Notification) => {
-        if (notif.is_read) return;
+    fetchParentSession();
 
-        try {
-            // Kirim ke AI backend
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/analyze-text/`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    text: notif.body,
-                    parent_token: deviceToken,
-                    parent_email: parentEmail,
-                }),
-            });
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const email = session?.user?.email || "";
+      setParentEmail(email);
+      console.log("🔁 Auth state change:", event, "| Email:", email);
+    });
 
-            if (!res.ok) throw new Error(`Failed send notification: ${res.status}`);
-            const aiData = await res.json();
-            notif.ai_analysis = aiData;
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
-            // Kirim ke email parent jika diaktifkan
-            if (emailNotificationsEnabled && parentEmail) {
-                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/send-email/`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        to: parentEmail,
-                        subject: notif.title || "KiddyGoo Notification",
-                        message: notif.body,
-                    }),
-                });
-            }
+  // ===============================
+  // 2️⃣ Request izin notifikasi browser
+  // ===============================
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
-            // Push browser notification
-            showBrowserNotification(notif.title || "Notifikasi baru", notif.body || "");
+  // ===============================
+  // 3️⃣ Ambil token device dari Firebase
+  // ===============================
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        if (!("Notification" in window)) return;
 
-            // Update Supabase: tandai is_read = true
-            const { error } = await supabase
-                .from("notifications")
-                .update({ is_read: true })
-                .eq("id", notif.id);
-            if (error) throw error;
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
 
-            notif.is_read = true;
-
-            // Update state lokal tanpa duplikasi
-            setNotifications((prev) => {
-                const map = new Map(prev.map((n) => [n.id, n]));
-                map.set(notif.id, notif);
-                return Array.from(map.values());
-            });
-
-        } catch (err) {
-            console.error("Gagal proses notifikasi:", err);
-            toast.error("Gagal kirim notifikasi ke backend/email");
+        const token = await getDeviceToken();
+        if (token) {
+          console.log("✅ Firebase device token:", token);
+          setDeviceToken(token);
+        } else {
+          console.warn("⚠️ Firebase tidak mengembalikan token");
         }
+      } catch (err) {
+        console.error("❌ Gagal ambil device token:", err);
+        toast.error("Gagal mendapatkan token notifikasi");
+      }
     };
 
-    // -----------------------------
-    // Fetch unread notifikasi saat mount
-    // -----------------------------
-    useEffect(() => {
-        if (!childIds.length || !deviceToken) return;
+    fetchToken();
+  }, []);
 
-        const fetchUnread = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from("notifications")
-                    .select("*")
-                    .in("child_id", childIds)
-                    .eq("is_read", false);
+  // ===============================
+  // 4️⃣ Ambil daftar anak parent
+  // ===============================
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user?.id) return;
 
-                if (error) throw error;
+        const { data, error } = await supabase
+          .from("children")
+          .select("id")
+          .eq("parent_id", user.id);
 
-                data?.forEach(processNotification);
-            } catch (err) {
-                console.error("Gagal fetch unread notifications:", err);
-            }
-        };
+        if (error) throw error;
 
-        fetchUnread();
-    }, [childIds, deviceToken, parentEmail, emailNotificationsEnabled]);
-
-    // -----------------------------
-    // Realtime subscription untuk unread
-    // -----------------------------
-    useEffect(() => {
-        if (!childIds.length || !deviceToken) return;
-
-        const subs = childIds.map((childId) =>
-            supabase
-                .channel(`notifications-${childId}`)
-                .on(
-                    "postgres_changes",
-                    { event: "INSERT", schema: "public", table: "notifications", filter: `child_id=eq.${childId}` },
-                    async (payload) => {
-                        const notif = payload.new as Notification;
-                        if (!notif.id || notif.is_read) return;
-                        processNotification(notif);
-                    }
-                )
-                .subscribe()
-        );
-
+        const ids = data?.map((c) => c.id) || [];
+        setChildIds(ids);
+      } catch (err) {
+        console.error("❌ Gagal fetch children:", err);
+      } finally {
         setLoading(false);
+      }
+    };
 
-        return () => subs.forEach((sub) => supabase.removeChannel(sub));
-    }, [childIds, deviceToken, parentEmail, emailNotificationsEnabled]);
+    fetchChildren();
+  }, []);
 
-    return { notifications, loading };
+  // ===============================
+  // 5️⃣ Load notifikasi lokal
+  // ===============================
+  useEffect(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setNotifications(parsed);
+      } catch (e) {
+        console.error("❌ Gagal parse notifikasi lokal:", e);
+      }
+    }
+  }, []);
+
+  // ===============================
+  // 6️⃣ Simpan notifikasi ke localStorage
+  // ===============================
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications));
+  }, [notifications]);
+
+  // ===============================
+  // 7️⃣ Helper notifikasi browser
+  // ===============================
+  const showBrowserNotification = (title: string, body: string) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    new Notification(title, {
+      body,
+      icon: "/kiddygoo/KiddyGoo_Icon_Logo.png",
+      silent: false,
+    });
+  };
+
+  // ===============================
+  // 8️⃣ Proses notifikasi baru
+  // ===============================
+  const processNotification = async (notif: Notification) => {
+    if (notif.is_read) return;
+    if (!notif.body) return;
+
+    try {
+      // Kirim ke AI backend (langsung ke /analyze-text)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/analyze-text/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: notif.body,
+          parent_token: deviceToken,
+          parent_email: parentEmail || null,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Failed send notification: ${res.status}`);
+      notif.ai_analysis = await res.json();
+
+      // Browser notification langsung tampil
+      showBrowserNotification(notif.title || "Notifikasi baru", notif.body);
+
+      // Update status di Supabase
+      await supabase.from("notifications").update({ is_read: true }).eq("id", notif.id);
+
+      // Update state lokal
+      notif.is_read = true;
+      setNotifications((prev) => {
+        const updated = new Map(prev.map((n) => [n.id, n]));
+        updated.set(notif.id, notif);
+        return Array.from(updated.values());
+      });
+    } catch (err) {
+      console.error("❌ Gagal memproses notifikasi:", err);
+    }
+  };
+
+  // ===============================
+  // 9️⃣ Realtime listener Supabase
+  // ===============================
+  useEffect(() => {
+    if (childIds.length === 0) return;
+
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `child_id=in.(${childIds.join(",")})`,
+        },
+        (payload) => {
+          const newNotif = payload.new as Notification;
+          console.log("📥 Notifikasi baru diterima:", newNotif);
+          processNotification(newNotif);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [childIds, parentEmail, deviceToken]);
+
+  return {
+    notifications,
+    loading,
+    parentEmail,
+  };
 }

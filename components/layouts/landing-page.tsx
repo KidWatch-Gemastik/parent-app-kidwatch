@@ -156,42 +156,42 @@ export default function KiddyGooLanding() {
         { number: 4.9, label: "Rating Pengguna", suffix: "★" },
     ]
 
-    const pricingPlans = [
-        {
-            name: "Basic",
-            price: "Gratis",
-            period: "selamanya",
-            description: "Untuk keluarga dengan 1 anak",
-            features: ["1 Anak", "Location Tracking", "Basic Chat", "Screen Time Monitoring", "Email Support"],
-            color: "from-gray-500 to-gray-600",
-            popular: false,
-        },
-        {
-            name: "Family",
-            price: "99K",
-            period: "/bulan",
-            description: "Untuk keluarga dengan hingga 3 anak",
-            features: ["3 Anak", "AI Assistant", "Advanced Analytics", "Geofencing", "Priority Support"],
-            color: "from-emerald-500 to-mint-500",
-            popular: true,
-        },
-        {
-            name: "Premium",
-            price: "199K",
-            period: "/bulan",
-            description: "Untuk keluarga besar dengan fitur lengkap",
-            features: [
-                "Unlimited Anak",
-                "AI Assistant Pro",
-                "Real-time Alerts",
-                "Custom Reports",
-                "24/7 Phone Support",
-                "Family Dashboard",
-            ],
-            color: "from-purple-500 to-pink-500",
-            popular: false,
-        },
-    ]
+    // const pricingPlans = [
+    //     {
+    //         name: "Basic",
+    //         price: "Gratis",
+    //         period: "selamanya",
+    //         description: "Untuk keluarga dengan 1 anak",
+    //         features: ["1 Anak", "Location Tracking", "Basic Chat", "Screen Time Monitoring", "Email Support"],
+    //         color: "from-gray-500 to-gray-600",
+    //         popular: false,
+    //     },
+    //     {
+    //         name: "Family",
+    //         price: "99K",
+    //         period: "/bulan",
+    //         description: "Untuk keluarga dengan hingga 3 anak",
+    //         features: ["3 Anak", "AI Assistant", "Advanced Analytics", "Geofencing", "Priority Support"],
+    //         color: "from-emerald-500 to-mint-500",
+    //         popular: true,
+    //     },
+    //     {
+    //         name: "Premium",
+    //         price: "199K",
+    //         period: "/bulan",
+    //         description: "Untuk keluarga besar dengan fitur lengkap",
+    //         features: [
+    //             "Unlimited Anak",
+    //             "AI Assistant Pro",
+    //             "Real-time Alerts",
+    //             "Custom Reports",
+    //             "24/7 Phone Support",
+    //             "Family Dashboard",
+    //         ],
+    //         color: "from-purple-500 to-pink-500",
+    //         popular: false,
+    //     },
+    // ]
 
     const floatingIcons = [
         { icon: Shield, color: "text-emerald-400", delay: 0 },
@@ -585,7 +585,7 @@ export default function KiddyGooLanding() {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+                    {/* <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
                         {pricingPlans.map((plan, index) => (
                             <Card
                                 key={index}
@@ -660,7 +660,7 @@ export default function KiddyGooLanding() {
                                 </CardContent>
                             </Card>
                         ))}
-                    </div>
+                    </div> */}
 
                     <div className="text-center mt-8 md:mt-12">
                         <p className="text-gray-400 mb-4">Butuh paket khusus untuk perusahaan?</p>
