@@ -4,14 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Smartphone, Monitor, Tablet, Wifi, Globe, Clock } from "lucide-react"
 
-interface Device {
-    id: string
-    device_id: string
-    os: string
-    status: string
-    platform: string
-    ip_address: string
-    created_at: string
+type Device = {
+  id: string
+  device_id: string
+  os?: string | null
+  status?: string | null
+  platform?: string | null
+  ip_address?: string | null
+  created_at?: string
+  battery_level?: number | null
+  is_charging?: boolean | null
+  is_online?: boolean | null
+  network_type?: string | null
+  last_seen?: string | null
+  updated_at?: string | null
 }
 
 interface DeviceMonitorProps {
@@ -103,8 +109,8 @@ export function DeviceMonitor({ devices }: DeviceMonitorProps) {
                             <div key={device.id} className="flex items-center justify-between p-3 rounded-lg border">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
-                                        {getDeviceIcon(device.platform)}
-                                        <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full ${getStatusColor(device.status)}`} />
+                                        {getDeviceIcon(device.platform || '')}
+                                        <div className={`absolute -top-1 -right-1 h-3 w-3 rounded-full ${getStatusColor(device.status ?? '')}`} />
                                     </div>
                                     <div>
                                         <p className="font-medium">{device.platform || "Unknown Device"}</p>
@@ -121,7 +127,7 @@ export function DeviceMonitor({ devices }: DeviceMonitorProps) {
                                     </Badge>
                                     <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                                         <Clock className="h-3 w-3" />
-                                        {formatDate(device.created_at)}
+                                        {formatDate(device.created_at || '')}
                                     </div>
                                 </div>
                             </div>
