@@ -1,0 +1,55 @@
+{
+  "name": "KiddyGoo – Parent App",
+  "short_name": "KiddyGoo",
+  "description": "KiddyGoo Parent App membantu orang tua memantau lokasi anak secara real-time, mengatur zona aman, dan menjaga keamanan keluarga dengan teknologi modern berbasis AI & GPS.",
+  "lang": "id-ID",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "categories": ["utilities", "education", "family", "lifestyle"],
+  "icons": [
+    {
+      "src": "/logo/KiddyGo-Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo/KiddyGo-Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo/KiddyGo-Logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Dashboard utama untuk pantau lokasi anak"
+    },
+    {
+      "src": "/screenshots/safe-zone.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Atur zona aman dan notifikasi real-time"
+    }
+  ],
+  "id": "https://kiddygoo.my.id/",
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.kiddygoo.parentapp",
+      "id": "com.kiddygoo.parentapp"
+    }
+  ],
+  "prefer_related_applications": false
+}

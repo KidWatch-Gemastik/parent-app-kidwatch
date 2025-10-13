@@ -110,7 +110,7 @@ export default function KiddyGooLanding() {
         {
             name: "Sarah Wijaya",
             role: "Ibu dari 2 anak",
-            avatar: "/placeholder.svg?height=60&width=60&text=SW",
+            avatar: "?height=60&width=60&text=SW",
             rating: 5,
             comment:
                 "KiddyGoo memberikan ketenangan pikiran yang luar biasa. Saya bisa memantau anak-anak tanpa merasa invasif. Fitur AI-nya sangat membantu!",
@@ -120,7 +120,7 @@ export default function KiddyGooLanding() {
         {
             name: "Ahmad Rahman",
             role: "Ayah dari 3 anak",
-            avatar: "/placeholder.svg?height=60&width=60&text=AR",
+            avatar: "?height=60&width=60&text=AR",
             rating: 5,
             comment:
                 "Fitur AI Assistant sangat membantu memberikan insight tentang kebiasaan digital anak-anak saya. Location tracking-nya juga sangat akurat!",
@@ -130,7 +130,7 @@ export default function KiddyGooLanding() {
         {
             name: "Linda Sari",
             role: "Ibu tunggal",
-            avatar: "/placeholder.svg?height=60&width=60&text=LS",
+            avatar: "?height=60&width=60&text=LS",
             rating: 5,
             comment:
                 "Location tracking yang akurat membuat saya tenang saat anak pergi sekolah. feature-nya juga crystal clear. Highly recommended!",
@@ -140,7 +140,7 @@ export default function KiddyGooLanding() {
         {
             name: "Budi Santoso",
             role: "Ayah dari 1 anak",
-            avatar: "/placeholder.svg?height=60&width=60&text=BS",
+            avatar: "?height=60&width=60&text=BS",
             rating: 5,
             comment:
                 "Setup-nya super mudah, dalam 5 menit sudah bisa monitoring. Dashboard analytics-nya memberikan insights yang sangat valuable!",
@@ -382,7 +382,7 @@ export default function KiddyGooLanding() {
                                     <div className="flex -space-x-2">
                                         {[1, 2, 3, 4].map((i) => (
                                             <Avatar key={i} className="w-6 h-6 md:w-8 md:h-8 border-2 border-emerald-500/30">
-                                                <AvatarImage src={`/placeholder.svg?height=32&width=32&text=${i}`} />
+                                                <AvatarImage src={`?height=32&width=32&text=${i}`} />
                                                 <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white text-xs">
                                                     {i}
                                                 </AvatarFallback>
@@ -741,7 +741,7 @@ export default function KiddyGooLanding() {
                             <div className="flex -space-x-2">
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <Avatar key={i} className="w-8 h-8 md:w-10 md:h-10 border-2 border-emerald-500/30">
-                                        <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${i}`} />
+                                        <AvatarImage src={`?height=40&width=40&text=${i}`} />
                                         <AvatarFallback className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white text-sm">
                                             {i}
                                         </AvatarFallback>
