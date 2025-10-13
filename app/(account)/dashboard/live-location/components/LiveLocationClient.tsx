@@ -21,17 +21,9 @@ const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false }
 );
-const Popup = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Popup),
-  { ssr: false }
-);
-
-interface LocationData {
-  latitude: number;
-  longitude: number;
-  address?: string;
-  timestamp?: string;
-}
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
 
 export default function LiveLocationClient() {
   const router = useRouter();
@@ -39,7 +31,7 @@ export default function LiveLocationClient() {
   const childId = searchParams.get("id");
   const { supabase } = useSupabase();
 
-  const [location, setLocation] = useState<LocationData | null>(null);
+  const [location, setLocation] = useState<any>(null);
   const [child, setChild] = useState<any>(null);
   const markerRef = useRef<any>(null);
 
@@ -62,16 +54,10 @@ export default function LiveLocationClient() {
         .single();
 
       setChild(childData);
-      if (locData)
-        setLocation({
-          latitude: locData.latitude,
-          longitude: locData.longitude,
-          address: locData.address,
-          timestamp: locData.created_at,
-        });
+      if (locData) setLocation({ ...locData });
     };
 
-    fetchInitial();
+    fetchInitial(); // panggil fungsi async tanpa menandai useEffect async
 
     const channel = supabase
       .channel(`realtime-location-${childId}`)
@@ -83,15 +69,7 @@ export default function LiveLocationClient() {
           table: "locations",
           filter: `child_id=eq.${childId}`,
         },
-        (payload) => {
-          const newLoc = payload.new;
-          setLocation({
-            latitude: newLoc.latitude,
-            longitude: newLoc.longitude,
-            address: newLoc.address,
-            timestamp: newLoc.created_at,
-          });
-        }
+        (payload) => setLocation(payload.new)
       )
       .subscribe();
 
@@ -151,18 +129,17 @@ export default function LiveLocationClient() {
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
+          attribution="&copy; OpenStreetMap contributors"
         />
-        <Marker position={[location.latitude, location.longitude]} ref={markerRef}>
+        <Marker
+          position={[location.latitude, location.longitude]}
+          ref={markerRef}
+        >
           <Popup>
             <div className="text-sm">
               <strong>{child.name}</strong>
               <br />
               {location.address || "Lokasi tidak diketahui"}
-              <br />
-              <span className="text-xs text-gray-500">
-                {new Date(location.timestamp || "").toLocaleTimeString()}
-              </span>
             </div>
           </Popup>
         </Marker>
@@ -176,7 +153,8 @@ export default function LiveLocationClient() {
             <span className="text-sm">{location.address}</span>
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Terakhir update: {new Date(location.timestamp || "").toLocaleTimeString()}
+            Terakhir update:{" "}
+            {new Date(location.timestamp || "").toLocaleTimeString()}
           </p>
         </div>
       </div>
