@@ -18,6 +18,7 @@ import {
   GpuIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { v4 as uuidv4 } from "uuid";
 
 import DashboardSidebar from "@/components/layouts/dashboardSidebar";
 import DashboardHeader from "@/components/layouts/DashboardHeader";
@@ -368,11 +369,16 @@ export default function DashboardPage() {
                   <MapPin className="w-4 h-4 mr-2" /> Lihat Lokasi
                 </Button>
 
-                {/* Tombol Live Location */}
                 <Button
                   variant="outline"
                   className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                  onClick={() => router.push("/live-location")}
+                  onClick={() => {
+                    if (!selectedChild?.id) return;
+                    const uniqueId = uuidv4(); 
+                    router.push(
+                      `/dashboard/live-location?id=${selectedChild.id}&uid=${uniqueId}`
+                    );
+                  }}
                 >
                   <GpuIcon className="w-4 h-4 mr-2" /> Akses Lokasi Anak
                   Realtime
