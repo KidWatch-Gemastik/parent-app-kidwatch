@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SupabaseProvider } from "@/providers/SupabaseProvider";
+import { Analytics } from "@vercel/analytics/next"
+
 
 const quicksand = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], display: "swap" });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
@@ -31,6 +33,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
           <Toaster />
+          <Analytics/>
         </SupabaseProvider>
       </body>
     </html>
