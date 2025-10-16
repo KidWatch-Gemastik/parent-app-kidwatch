@@ -102,14 +102,14 @@ export default function DashboardPage() {
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             {/* <Shield className="w-8 h-8 text-white" /> */}
-             <Image
-                                src={"/logo/KiddyGo-Logo.png"}
-                                className="w-32"
-                                loading="eager"
-                                alt="KiddyGoo Logo Icon"
-                                width={100}
-                                height={100}
-                              />
+            <Image
+              src={"/logo/KiddyGo-logo.png"}
+              className="w-32"
+              loading="eager"
+              alt="KiddyGoo Logo Icon"
+              width={100}
+              height={100}
+            />
           </div>
           <p className="text-emerald-400 font-medium">Memuat dashboard...</p>
         </div>
@@ -147,21 +147,21 @@ export default function DashboardPage() {
   const alerts = [
     ...(stats.totalZones === 0
       ? [
-          {
-            type: "warning",
-            message: "Belum ada zona aman dibuat",
-            time: "Baru saja",
-          },
-        ]
+        {
+          type: "warning",
+          message: "Belum ada zona aman dibuat",
+          time: "Baru saja",
+        },
+      ]
       : []),
     ...(onlineStatus === "Offline"
       ? [
-          {
-            type: "error",
-            message: "Perangkat sedang offline",
-            time: "Baru saja",
-          },
-        ]
+        {
+          type: "error",
+          message: "Perangkat sedang offline",
+          time: "Baru saja",
+        },
+      ]
       : []),
   ];
 
@@ -307,26 +307,26 @@ export default function DashboardPage() {
                       // Pastikan format tanggal valid ISO
                       const validDate = a.timestamp
                         ? new Date(
-                            a.timestamp.includes("Z")
-                              ? a.timestamp
-                              : a.timestamp + "Z"
-                          )
+                          a.timestamp.includes("Z")
+                            ? a.timestamp
+                            : a.timestamp + "Z"
+                        )
                         : null;
 
                       const formattedTime = validDate
                         ? validDate.toLocaleTimeString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })
                         : "(Tidak di Set)";
 
                       const formattedDate = validDate
                         ? validDate.toLocaleDateString("id-ID", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          })
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
                         : "Tidak ada Tanggal";
 
                       return (
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                   className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                   onClick={() => {
                     if (!selectedChild?.id) return;
-                    const uniqueId = uuidv4(); 
+                    const uniqueId = uuidv4();
                     router.push(
                       `/dashboard/live-location?id=${selectedChild.id}&uid=${uniqueId}`
                     );

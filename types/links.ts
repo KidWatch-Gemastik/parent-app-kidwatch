@@ -1,19 +1,18 @@
 export interface NavbarLink {
-    text: string;
-    href: string;
+  text: string;
+  href: string;
 }
 
 export const guestLinks: NavbarLink[] = [
-    { text: "Beranda", href: "/" },
-    { text: "Tentang", href: "/about" },
-    { text: "Fitur", href: "/features" },
-    { text: "Kontak", href: "/contact" },
-    { text: "Login", href: "/login" },
-    { text: "Register", href: "/register" },
+  { text: "Beranda", href: "/" },
+  { text: "Tentang", href: "#getting-started" },
+  { text: "Fitur", href: "#ai-assistant" },
+  { text: "Price", href: "#price" },
+  { text: "Login", href: "/login" },
 ];
 
 export const authLinks: NavbarLink[] = [
-    { text: "Dashboard", href: "/dashboard" },
-    { text: "Profil", href: "/dashboard/profile" },
-    { text: "Pengaturan", href: "/dashboard/preferences" },
+  { text: "Dashboard", href: "/dashboard" },
+  { text: "Profil", href: "/dashboard/profile" },
+  { text: "Pengaturan", href: "/dashboard/preferences" },
 ];

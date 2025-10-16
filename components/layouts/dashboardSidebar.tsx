@@ -78,7 +78,7 @@ export default function DashboardSidebar() {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Image
-                  src={"/logo/KiddyGo-Logo.png"}
+                  src={"/logo/KiddyGo-logo.png"}
                   className="w-32"
                   loading="eager"
                   alt="KiddyGoo Logo Icon"
