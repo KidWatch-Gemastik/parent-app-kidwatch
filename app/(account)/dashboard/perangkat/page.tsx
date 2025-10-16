@@ -16,6 +16,7 @@ import { DeleteChildModal } from "./components/DeleteChildModal";
 import type { Child } from "@/types";
 import { useChildren } from "@/hooks/useChildren";
 import { useSupabase } from "@/providers/SupabaseProvider";
+import { toast } from "sonner";
 
 export default function ChildPage({ initialChildren }: { initialChildren: Child[] }) {
     const router = useRouter();
@@ -72,6 +73,7 @@ export default function ChildPage({ initialChildren }: { initialChildren: Child[
 
         if (error) {
             console.error("Gagal menambahkan anak:", error);
+            toast.error("Gagal menambahkan anak:" + error.message);
             return;
         }
 

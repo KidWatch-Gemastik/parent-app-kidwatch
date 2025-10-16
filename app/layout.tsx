@@ -71,13 +71,6 @@ export const metadata: Metadata = {
     apple: "/logo/KiddyGo-Logo.svg",
   },
   manifest: "/site.webmanifest",
-  themeColor: "#ffffff",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   robots: {
     index: true,
     follow: true,

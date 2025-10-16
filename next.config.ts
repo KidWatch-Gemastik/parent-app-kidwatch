@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ['lh3.googleusercontent.com', 'avatars.githubusercontent.com', 'api.dicebear.com', 'ltarjljnzwrogwwdvtob.supabase.co'],
+    domains: ['lh3.googleusercontent.com', 'avatars.githubusercontent.com', 'api.dicebear.com', 'ltarjljnzwrogwwdvtob.supabase.co', 'platform-lookaside.fbsbx.com'],
   },
   // For DeploymentConfig
   typescript: {

@@ -171,28 +171,28 @@ export default function DashboardPage() {
       description: "Monitor lokasi real-time anak Anda.",
       action: "View Map",
       icon: <MapPin className="h-4 w-4 text-white" />,
-      href: "/location",
+      href: "/dashboard/location",
     },
     {
       title: "Call & Message Logs",
       description: "Lihat panggilan dan pesan anak Anda.",
       action: "View Logs",
       icon: <PhoneCall className="h-4 w-4 text-white" />,
-      href: "/logs",
+      href: "/dashboard/logs",
     },
     {
       title: "Safe Zones",
       description: "Atur zona aman dan geofencing.",
       action: "Manage Zones",
       icon: <ShieldCheck className="h-4 w-4 text-white" />,
-      href: "/safe-zones",
+      href: "/dashboard/safe-zones",
     },
     {
       title: "Usage Stats",
       description: "Lihat statistik penggunaan aplikasi.",
       action: "View Report",
       icon: <BarChart3 className="h-4 w-4 text-white" />,
-      href: "/stats",
+      href: "/dashboard/stats",
     },
   ];
 

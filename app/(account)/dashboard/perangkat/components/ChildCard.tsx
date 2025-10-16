@@ -21,7 +21,9 @@ interface ChildCardProps {
 
 export function ChildCard({ child, onEdit, onDelete }: ChildCardProps) {
     const [isQrOpen, setIsQrOpen] = useState(false)
-    const qrValue = child.qr_code || ""
+    const qrValue = child.qr_id || "https://kiddygoo.my.id/" + child.qr_id
+
+    // console.log(qrValue)
 
     return (
         <>
