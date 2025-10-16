@@ -24,7 +24,7 @@ export function Footer() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl shadow-xl animate-pulse">
                   <Image
-                    src={"/logo/KiddyGo-logo.png"}
+                    src={"/logo/KiddyGologo.png"}
                     className="w-32"
                     loading="eager"
                     alt="KiddyGoo Logo Icon"

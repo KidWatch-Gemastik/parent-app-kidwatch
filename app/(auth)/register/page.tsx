@@ -159,7 +159,7 @@ export default function RegisterPage() {
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl mb-4 shadow-xl">
                   <Image
-                    src={"/logo/KiddyGo-logo.png"}
+                    src={"/logo/KiddyGologo.png"}
                     className="w-32"
                     loading="eager"
                     alt="KiddyGoo Logo Icon"
