@@ -13,8 +13,6 @@ import {
   Eye,
   Sparkles,
   Plus,
-  Shield,
-  Gpu,
   GpuIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -53,10 +51,9 @@ export default function DashboardPage() {
   const [showMap, setShowMap] = useState(false);
   const [address, setAddress] = useState<string>("Memuat alamat...");
 
-  // Tentukan currentChild agar tidak membuat hook conditional
+  // === Current Child untuk Detail ===
   const currentChild = selectedChild || fetchedChildren[0] || null;
 
-  // Hook useChildDetails harus selalu terpanggil
   const { details, loading: loadingDetails } = useChildDetails(
     currentChild?.id || ""
   );
@@ -66,14 +63,14 @@ export default function DashboardPage() {
     if (!user && !loadingChildren) router.replace("/login");
   }, [user, loadingChildren, router]);
 
-  // === Set default anak ===
+  // === Set default anak pertama ===
   useEffect(() => {
     if (!loadingChildren && fetchedChildren.length > 0 && !selectedChild) {
       setSelectedChild(fetchedChildren[0]);
     }
   }, [fetchedChildren, loadingChildren, selectedChild]);
 
-  // === Fetch alamat dari lat/lng ===
+  // === Fetch alamat dari koordinat ===
   const latitude = details?.locations?.[0]?.latitude ?? 0;
   const longitude = details?.locations?.[0]?.longitude ?? 0;
 
@@ -94,12 +91,7 @@ export default function DashboardPage() {
     fetchAddress();
   }, [latitude, longitude]);
 
-  if (!user) {
-    router.replace("/login");
-    return null;
-  }
-
-  // === Loading UI ===
+  // === Loading screen sementara data di-fetch ===
   const isFetching =
     loadingChildren || (loadingDetails && fetchedChildren.length > 0);
 
@@ -123,22 +115,7 @@ export default function DashboardPage() {
     );
   }
 
-  // === Jika belum ada anak ===
-  if (!fetchedChildren.length) {
-    return (
-      <div className="flex min-h-screen items-center justify-center flex-col bg-slate-950 text-white">
-        <p className="text-gray-400 mb-4">Tidak ada anak terdaftar.</p>
-        <Button
-          onClick={() => router.push("/children")}
-          className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white"
-        >
-          <Plus className="mr-2 w-4 h-4" /> Tambah Anak
-        </Button>
-      </div>
-    );
-  }
-
-  // === Data Details ===
+  // === Data Fallback ===
   const stats = details?.stats ?? {
     totalCalls: 0,
     totalMessages: 0,
@@ -150,26 +127,35 @@ export default function DashboardPage() {
     : "Offline";
   const recentActivities = details?.appUsages?.slice(0, 5) ?? [];
 
-  const alerts = [
-    ...(stats.totalZones === 0
-      ? [
-          {
-            type: "warning",
-            message: "Belum ada zona aman dibuat",
-            time: "Baru saja",
-          },
-        ]
-      : []),
-    ...(onlineStatus === "Offline"
-      ? [
-          {
-            type: "error",
-            message: "Perangkat sedang offline",
-            time: "Baru saja",
-          },
-        ]
-      : []),
-  ];
+  const alerts = fetchedChildren.length
+    ? [
+        ...(stats.totalZones === 0
+          ? [
+              {
+                type: "warning",
+                message: "Belum ada zona aman dibuat",
+                time: "Baru saja",
+              },
+            ]
+          : []),
+        ...(onlineStatus === "Offline"
+          ? [
+              {
+                type: "error",
+                message: "Perangkat sedang offline",
+                time: "Baru saja",
+              },
+            ]
+          : []),
+      ]
+    : [
+        {
+          type: "info",
+          message:
+            "Belum ada anak terdaftar. Tambahkan anak untuk mulai memantau.",
+          time: "Baru saja",
+        },
+      ];
 
   const featureCards = [
     {
@@ -202,7 +188,7 @@ export default function DashboardPage() {
     },
   ];
 
-  // === Render UI ===
+  // === UI ===
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950">
       <div className="flex relative z-10">
@@ -213,42 +199,61 @@ export default function DashboardPage() {
             description="Ringkasan aktivitas dan kontrol anak Anda"
           />
 
-          {/* Pilih Anak */}
+          {/* Pilihan Anak */}
           <section>
             <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-400" /> Pilih Anak
             </h2>
             <div className="flex space-x-4 overflow-x-auto pb-2">
-              {fetchedChildren.map((child) => (
-                <Card
-                  key={child.id}
-                  className={cn(
-                    "cursor-pointer border bg-gray-900/80 backdrop-blur-xl flex-shrink-0 transition-all",
-                    selectedChild?.id === child.id
-                      ? "ring-2 ring-emerald-500 bg-emerald-950/40"
-                      : "border-gray-700 hover:border-emerald-500/40"
-                  )}
-                  onClick={() => setSelectedChild(child)}
-                >
-                  <CardContent className="p-5 flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage
-                        src={
-                          child.avatar ||
-                          `https://api.dicebear.com/6.x/avataaars/svg?seed=${child.name}`
-                        }
-                      />
-                      <AvatarFallback>{child.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-white font-semibold">{child.name}</h3>
-                      <p className="text-sm text-gray-400">
-                        Usia {getAgeFromDate(child.date_of_birth)} tahun
-                      </p>
-                    </div>
+              {fetchedChildren.length ? (
+                fetchedChildren.map((child) => (
+                  <Card
+                    key={child.id}
+                    className={cn(
+                      "cursor-pointer border bg-gray-900/80 backdrop-blur-xl flex-shrink-0 transition-all",
+                      selectedChild?.id === child.id
+                        ? "ring-2 ring-emerald-500 bg-emerald-950/40"
+                        : "border-gray-700 hover:border-emerald-500/40"
+                    )}
+                    onClick={() => setSelectedChild(child)}
+                  >
+                    <CardContent className="p-5 flex items-center space-x-4">
+                      <Avatar>
+                        <AvatarImage
+                          src={
+                            child.avatar ||
+                            `https://api.dicebear.com/6.x/avataaars/svg?seed=${child.name}`
+                          }
+                        />
+                        <AvatarFallback>{child.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-white font-semibold">
+                          {child.name}
+                        </h3>
+                        <p className="text-sm text-gray-400">
+                          Usia {getAgeFromDate(child.date_of_birth)} tahun
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="min-w-[180px] bg-slate-900/50 border-dashed border-emerald-700 flex items-center justify-center">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-gray-400 text-sm mb-2">
+                      Belum ada anak terdaftar
+                    </p>
+                    <Button
+                      onClick={() => router.push("/children")}
+                      size="sm"
+                      className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Tambah
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
           </section>
 
@@ -258,47 +263,36 @@ export default function DashboardPage() {
               {alerts.map((alert, i) => (
                 <Card
                   key={i}
-                  className="border-l-4 border-amber-500 bg-amber-950/30 backdrop-blur-xl"
+                  className={cn(
+                    "border-l-4 backdrop-blur-xl",
+                    alert.type === "warning"
+                      ? "border-amber-500 bg-amber-950/30"
+                      : alert.type === "error"
+                      ? "border-red-500 bg-red-950/30"
+                      : "border-emerald-500 bg-emerald-950/30"
+                  )}
                 >
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <AlertTriangle className="text-amber-400 h-5 w-5" />
-                      <span className="text-amber-100 text-sm font-medium">
+                      <span className="text-sm font-medium text-gray-100">
                         {alert.message}
                       </span>
                     </div>
-                    <span className="text-xs text-amber-300">{alert.time}</span>
+                    <span className="text-xs text-gray-400">{alert.time}</span>
                   </CardContent>
                 </Card>
               ))}
             </section>
           )}
 
-          {/* Statistik */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <OverviewCard
-              title="Total Calls"
-              value={stats.totalCalls}
-              icon={<PhoneCall />}
-            />
-            <OverviewCard
-              title="Total Messages"
-              value={stats.totalMessages}
-              icon={<Bell />}
-            />
-            <OverviewCard
-              title="Active Devices"
-              value={stats.activeDevices}
-              icon={<Smartphone />}
-            />
-            <OverviewCard
-              title="Safe Zones"
-              value={stats.totalZones}
-              icon={<ShieldCheck />}
-            />
+            <OverviewCard title="Total Calls" value={stats.totalCalls} icon={<PhoneCall />} />
+            <OverviewCard title="Total Messages" value={stats.totalMessages} icon={<Bell />} />
+            <OverviewCard title="Active Devices" value={stats.activeDevices} icon={<Smartphone />} />
+            <OverviewCard title="Safe Zones" value={stats.totalZones} icon={<ShieldCheck />} />
           </section>
 
-          {/* Aktivitas Terbaru + Kontrol */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <Card className="lg:col-span-2 bg-gray-900/80 border-emerald-500/30">
               <CardHeader>
@@ -310,7 +304,6 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {recentActivities.length ? (
                     recentActivities.map((a, i) => {
-                      // Pastikan format tanggal valid ISO
                       const validDate = a.timestamp
                         ? new Date(
                             a.timestamp.includes("Z")
@@ -318,7 +311,6 @@ export default function DashboardPage() {
                               : a.timestamp + "Z"
                           )
                         : null;
-
                       const formattedTime = validDate
                         ? validDate.toLocaleTimeString("id-ID", {
                             hour: "2-digit",
@@ -326,7 +318,6 @@ export default function DashboardPage() {
                             second: "2-digit",
                           })
                         : "(Tidak di Set)";
-
                       const formattedDate = validDate
                         ? validDate.toLocaleDateString("id-ID", {
                             day: "2-digit",
@@ -375,7 +366,6 @@ export default function DashboardPage() {
                 <CardTitle className="text-white">Quick Controls</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* Tombol Lihat Lokasi */}
                 <Button
                   variant="outline"
                   className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
@@ -395,14 +385,12 @@ export default function DashboardPage() {
                     );
                   }}
                 >
-                  <GpuIcon className="w-4 h-4 mr-2" /> Akses Lokasi Anak
-                  Realtime
+                  <GpuIcon className="w-4 h-4 mr-2" /> Akses Lokasi Anak Realtime
                 </Button>
               </CardContent>
             </Card>
           </section>
 
-          {/* Fitur Tambahan */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featureCards.map((card) => (
               <DashboardCard key={card.title} {...card} />
@@ -424,6 +412,7 @@ export default function DashboardPage() {
   );
 }
 
+// === Komponen Statistik ===
 function OverviewCard({
   title,
   value,
