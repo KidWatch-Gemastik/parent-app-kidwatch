@@ -110,8 +110,8 @@ function ChildStatsCard({ child }: { child: any }) {
   )
 }
 
-export function StatsOverview() {
-  const { stats, loading, error } = useDashboardStats()
+export function StatsOverview({ userId }: { userId: string }) {
+  const { stats, loading, error } = useDashboardStats(userId)
 
   if (loading) {
     return (

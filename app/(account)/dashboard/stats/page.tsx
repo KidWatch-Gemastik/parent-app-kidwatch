@@ -30,7 +30,7 @@ export default function StatsPages() {
                         title="Monitoring Statistik"
                         description="Monitor your children's digital activity and location safety in real-time."
                     />
-                    <StatsOverview />
+                    <StatsOverview userId={session.user.id} />
                 </main>
             </div>
         </div>
