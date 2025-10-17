@@ -245,7 +245,7 @@ export default function DashboardPage() {
                       Belum ada anak terdaftar
                     </p>
                     <Button
-                      onClick={() => router.push("/dashboard/children")}
+                      onClick={() => router.push("/dashboard/perangkat")}
                       size="sm"
                       variant={'ghost'}
                       className="bg-gradient-to-r from-emerald-500 to-mint-500 text-white"
