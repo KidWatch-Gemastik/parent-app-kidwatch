@@ -94,22 +94,27 @@ export default function DashboardPage() {
     fetchAddress();
   }, [latitude, longitude]);
 
-  // === Loading UI ===
-  const isLoading = !user || loadingChildren || loadingDetails;
+  if (!user) {
+    router.replace("/login");
+    return null;
+  }
+
+  const isLoading = loadingChildren || loadingDetails;
+
+  // Loading Screen
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            {/* <Shield className="w-8 h-8 text-white" /> */}
-             <Image
-                                src={"/logo/KiddyGo-Logo.png"}
-                                className="w-32"
-                                loading="eager"
-                                alt="KiddyGoo Logo Icon"
-                                width={100}
-                                height={100}
-                              />
+            <Image
+              src={"/logo/KiddyGo-Logo.png"}
+              className="w-32"
+              loading="eager"
+              alt="KiddyGoo Logo Icon"
+              width={100}
+              height={100}
+            />
           </div>
           <p className="text-emerald-400 font-medium">Memuat dashboard...</p>
         </div>
@@ -383,7 +388,7 @@ export default function DashboardPage() {
                   className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                   onClick={() => {
                     if (!selectedChild?.id) return;
-                    const uniqueId = uuidv4(); 
+                    const uniqueId = uuidv4();
                     router.push(
                       `/dashboard/live-location?id=${selectedChild.id}&uid=${uniqueId}`
                     );
