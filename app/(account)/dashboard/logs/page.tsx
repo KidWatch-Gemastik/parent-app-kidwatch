@@ -51,7 +51,7 @@ export default function CallLogsPage() {
     const { data: children, error: childrenError } = await supabase
       .from("children")
       .select("id")
-      .eq("user_id", parentId);
+      .eq("parent_id", parentId);
 
     if (childrenError || !children) {
       setLoading(false);
