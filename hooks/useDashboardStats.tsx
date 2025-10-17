@@ -30,7 +30,7 @@ export function useDashboardStats(userId: string) {
         const childrenRes = await supabase
           .from("children")
           .select("id, name")
-          .eq("user_id", userId);
+          .eq("parent_id", userId);
 
         if (childrenRes.error) throw childrenRes.error;
 
