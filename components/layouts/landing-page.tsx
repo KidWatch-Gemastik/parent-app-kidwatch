@@ -18,28 +18,25 @@ import {
     Heart,
     Zap,
     Download,
-    Globe,
-    Lock,
     Sparkles,
     Phone,
     Rocket,
     Target,
     Wifi,
     TrendingUp,
-    Headphones,
-    Gift,
     Crown,
     Flame,
     CloudLightningIcon as Lightning,
-    Award,
-    Trophy,
     CheckCheck,
     SquareArrowOutDownRightIcon,
+    ScreenShare,
+    ShieldCheckIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import { Footer } from "./footer"
+import { id } from "date-fns/locale"
 
 export default function KiddyGooLanding() {
     const [activeFeature, setActiveFeature] = useState(0)
@@ -73,7 +70,8 @@ export default function KiddyGooLanding() {
             color: "from-purple-500 to-pink-500",
             image: "/kiddygoo/ai-assistant.png?height=300&width=400&text=AI+Assistant+Dashboard",
             badge: "🤖 AI Powered",
-            stats: "99.8% Akurasi",
+            stats: "86.8% Akurasi",
+            id: "ai-assistant",
         },
         {
             icon: MapPin,
@@ -84,6 +82,7 @@ export default function KiddyGooLanding() {
             image: "/kiddygoo/location.png?height=300&width=400&text=GPS+Tracking+Map",
             badge: "📍 GPS Precision",
             stats: "±3m Akurasi",
+            id: "location",
         },
         {
             icon: MessageCircle,
@@ -93,6 +92,7 @@ export default function KiddyGooLanding() {
             image: "/kiddygoo/chat.png?height=300&width=400&text=Chat+Interface",
             badge: "💬 HD Quality",
             stats: "24/7 Available",
+            id: "chat",
         },
         {
             icon: BarChart3,
@@ -103,6 +103,30 @@ export default function KiddyGooLanding() {
             image: "/kiddygoo/log.png?height=300&width=400&text=Analytics+Dashboard",
             badge: "📊 Smart Analytics",
             stats: "50+ Metrics",
+            id: "analytics",
+        },
+        {
+            icon: ScreenShare,
+            title: "Screen Time Control",
+            description:
+                "Control Waktu layar dan aplikasi dengan jadwal fleksibel, serta fitur penjadwalan yang mudah",
+            color: "from-indigo-500 to-purple-500",
+            image: "/kiddygoo/management.png?height=300&width=400&text=ScreenTime+Control",
+            badge: "🤳 Smart Control",
+            stats: "Full Customization",
+            id: "screen-time",
+        },
+        {
+            icon: ShieldCheckIcon,
+            title: "Location Safe Zone",
+            description:
+                "Tetapkan area aman untuk anak agar perangkat hanya dapat digunakan di lokasi tertentu. Dilengkapi dengan notifikasi saat keluar dari zona aman.",
+            color: "from-green-500 to-emerald-500",
+            image: "/kiddygoo/safe-zone.png?height=300&width=400&text=Location+Safe+Zone",
+            badge: "🛰️ Geo Control",
+            stats: "Smart Geofencing",
+            id: "safety",
+
         },
     ]
 
@@ -490,6 +514,7 @@ export default function KiddyGooLanding() {
                         <div className="space-y-4 md:space-y-6">
                             {features.map((feature, index) => (
                                 <Card
+                                    id={feature.id}
                                     key={index}
                                     className={cn(
                                         "border transition-all duration-500 cursor-pointer group hover:scale-105",
@@ -832,7 +857,7 @@ export default function KiddyGooLanding() {
                                 </h3>
                                 <p className="text-gray-300 text-sm leading-relaxed">
                                     Anak dapat <span className="font-semibold text-violet-300">badge</span> atau <span className="font-semibold text-violet-300 mr-2">reward</span>
-                                     Jika berhasil mengurangi screen time, atau lebih banyak membuka aplikasi edukasi.
+                                    Jika berhasil mengurangi screen time, atau lebih banyak membuka aplikasi edukasi.
                                 </p>
                                 <div className="mt-6 flex items-center justify-center gap-2 text-violet-400 font-medium text-sm animate-bounce">
                                     <SquareArrowOutDownRightIcon className="w-4 h-4" />

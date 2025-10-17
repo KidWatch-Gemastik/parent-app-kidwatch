@@ -50,7 +50,7 @@ interface NavigationProps {
 const KiddyGooLogo = () => (
   <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl shadow-xl animate-pulse">
     {/* <Shield className="w-5 h-5 text-white" /> */}
-    <Image src={'/logo/KiddyGo-Logo.png'} loading="eager" alt="KiddyGoo Logo Icon" width={100} height={100} />
+    <Image src={'/logo/KiddyGologo.png'} loading="eager" alt="KiddyGoo Logo Icon" width={100} height={100} />
 
   </div>
 )
@@ -127,7 +127,7 @@ export default function Navigation({
     },
     {
       title: "Download App",
-      href: "#download",
+      href: "#download-app",
       description: "Download aplikasi KiddyGoo untuk Android dan iOS dengan fitur lengkap",
       icon: Smartphone,
     },

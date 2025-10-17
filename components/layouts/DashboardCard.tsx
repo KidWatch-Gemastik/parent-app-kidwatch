@@ -1,17 +1,20 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface DashboardCardProps {
     icon: React.ReactNode
     title: string
     description: string
     action: string
+    href: string
 }
 
 export default function DashboardCard({
     icon,
     title,
     description,
+    href,
     action,
 }: DashboardCardProps) {
     return (
@@ -24,9 +27,11 @@ export default function DashboardCard({
             </CardHeader>
             <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">{description}</p>
-                <Button variant="outline" size="sm" className="w-full">
-                    {action}
-                </Button>
+                <Link href={href}>
+                    <Button variant="outline" size="sm" className="w-full">
+                        {action}
+                    </Button>
+                </Link>
             </CardContent>
         </Card>
     )

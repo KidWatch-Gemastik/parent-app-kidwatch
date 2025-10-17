@@ -42,7 +42,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({
-  logo =  <Image src={'/logo/KiddyGo - Horizontal.png'} className="w-32" loading="eager" alt="KiddyGoo Logo Horizontal" width={100} height={100} />,
+  logo = <Image src={'/logo/KiddyGo-Horizontal.png'} className="w-32" loading="eager" alt="KiddyGoo Logo Horizontal" width={100} height={100} />,
   name = "KiddyGoo",
   homeUrl = "/",
   showNavigation = true,

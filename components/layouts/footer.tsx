@@ -17,14 +17,14 @@ export function Footer() {
   return (
     <>
       {/* Enhanced Footer */}
-      <footer className="border-t border-emerald-500/20 bg-gray-900/80 backdrop-blur-xl">
+      <footer id="download-app" className="border-t border-emerald-500/20 bg-gray-900/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             <div className="sm:col-span-2">
               <div className="flex items-center gap-3 mb-4">
                 <div className="inline-flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl shadow-xl animate-pulse">
                   <Image
-                    src={"/logo/KiddyGo-Logo.png"}
+                    src={"/logo/KiddyGologo.png"}
                     className="w-32"
                     loading="eager"
                     alt="KiddyGoo Logo Icon"

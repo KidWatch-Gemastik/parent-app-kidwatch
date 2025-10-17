@@ -99,16 +99,16 @@ export default function DashboardPage() {
     return null;
   }
 
+  // === Loading UI ===
   const isLoading = loadingChildren || loadingDetails;
-
-  // Loading Screen
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            {/* <Shield className="w-8 h-8 text-white" /> */}
             <Image
-              src={"/logo/KiddyGo-Logo.png"}
+              src={"/logo/KiddyGologo.png"}
               className="w-32"
               loading="eager"
               alt="KiddyGoo Logo Icon"
@@ -176,28 +176,28 @@ export default function DashboardPage() {
       description: "Monitor lokasi real-time anak Anda.",
       action: "View Map",
       icon: <MapPin className="h-4 w-4 text-white" />,
-      href: "/location",
+      href: "/dashboard/location",
     },
     {
       title: "Call & Message Logs",
       description: "Lihat panggilan dan pesan anak Anda.",
       action: "View Logs",
       icon: <PhoneCall className="h-4 w-4 text-white" />,
-      href: "/logs",
+      href: "/dashboard/logs",
     },
     {
       title: "Safe Zones",
       description: "Atur zona aman dan geofencing.",
       action: "Manage Zones",
       icon: <ShieldCheck className="h-4 w-4 text-white" />,
-      href: "/safe-zones",
+      href: "/dashboard/safe-zones",
     },
     {
       title: "Usage Stats",
       description: "Lihat statistik penggunaan aplikasi.",
       action: "View Report",
       icon: <BarChart3 className="h-4 w-4 text-white" />,
-      href: "/stats",
+      href: "/dashboard/stats",
     },
   ];
 
