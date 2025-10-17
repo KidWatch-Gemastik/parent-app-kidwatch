@@ -100,13 +100,14 @@ export default function DashboardPage() {
   }
 
   // === Loading UI ===
-  const isLoading = loadingChildren || loadingDetails;
-  if (isLoading) {
+  const isFetching =
+    loadingChildren || (loadingDetails && fetchedChildren.length > 0);
+
+  if (isFetching) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-950 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            {/* <Shield className="w-8 h-8 text-white" /> */}
             <Image
               src={"/logo/KiddyGologo.png"}
               className="w-32"
