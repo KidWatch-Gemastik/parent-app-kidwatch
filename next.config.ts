@@ -39,6 +39,7 @@ const securityHeaders = [
         https://c.tile.openstreetmap.org
         https://cdn-icons-png.flaticon.com;
       font-src 'self' https://fonts.gstatic.com;
+      media-src 'self' blob: data: https://ltarjljnzwrogwwdvtob.supabase.co;
       connect-src 'self'
         https://ai.kiddygoo.my.id
         https://*.supabase.co
