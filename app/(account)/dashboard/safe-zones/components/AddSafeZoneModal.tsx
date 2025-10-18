@@ -80,7 +80,7 @@ export function AddSafeZoneModal({ isOpen, onClose, onSave, childrenList }: AddS
 
     return (
         <Sheet open={isOpen} onOpenChange={handleClose}>
-            <SheetContent side="right" className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl rounded-t-2xl p-6">
+            <SheetContent side="right" className="bg-gray-900/95 backdrop-blur-xl border-emerald-500/30 text-white w-full md:max-w-4xl lg:max-w-5xl rounded-t-2xl p-6 overflow-y-auto">
                 <SheetHeader>
                     <SheetTitle className="flex items-center space-x-3 text-xl">
                         <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-mint-500 rounded-xl flex items-center justify-center shadow-lg">
