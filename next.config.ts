@@ -30,7 +30,7 @@ const securityHeaders = [
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: blob: https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://api.dicebear.com https://ltarjljnzwrogwwdvtob.supabase.co https://platform-lookaside.fbsbx.com;
       font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://ai.kiddygoo.my.id https://*.supabase.co https://kiddygoo.my.id wss://*.supabase.co;
+      connect-src 'self' https://ai.kiddygoo.my.id https://*.supabase.co https://kiddygoo.my.id https://nominatim.openstreetmap.org wss://*.supabase.co;
       frame-ancestors 'none';
       base-uri 'self';
     `.replace(/\n/g, ""),
