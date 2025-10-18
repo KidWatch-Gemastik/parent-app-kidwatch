@@ -28,9 +28,23 @@ const securityHeaders = [
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://cdn.jsdelivr.net;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      img-src 'self' data: blob: https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://api.dicebear.com https://ltarjljnzwrogwwdvtob.supabase.co https://platform-lookaside.fbsbx.com;
+      img-src 'self' data: blob:
+        https://lh3.googleusercontent.com
+        https://avatars.githubusercontent.com
+        https://api.dicebear.com
+        https://ltarjljnzwrogwwdvtob.supabase.co
+        https://platform-lookaside.fbsbx.com
+        https://a.tile.openstreetmap.org
+        https://b.tile.openstreetmap.org
+        https://c.tile.openstreetmap.org
+        https://cdn-icons-png.flaticon.com;
       font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://ai.kiddygoo.my.id https://*.supabase.co https://kiddygoo.my.id https://nominatim.openstreetmap.org wss://*.supabase.co;
+      connect-src 'self'
+        https://ai.kiddygoo.my.id
+        https://*.supabase.co
+        https://kiddygoo.my.id
+        https://nominatim.openstreetmap.org
+        wss://*.supabase.co;
       frame-ancestors 'none';
       base-uri 'self';
     `.replace(/\n/g, ""),
@@ -45,26 +59,18 @@ const nextConfig: NextConfig = {
       "api.dicebear.com",
       "ltarjljnzwrogwwdvtob.supabase.co",
       "platform-lookaside.fbsbx.com",
+      "a.tile.openstreetmap.org",
+      "b.tile.openstreetmap.org",
+      "c.tile.openstreetmap.org",
+      "cdn-icons-png.flaticon.com",
     ],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  basePath: "",
-  assetPrefix: "",
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   trailingSlash: true,
   productionBrowserSourceMaps: true,
-
   async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: securityHeaders,
-      },
-    ];
+    return [{ source: "/(.*)", headers: securityHeaders }];
   },
 };
 
