@@ -10,8 +10,8 @@ import {
 } from "react-leaflet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Ruler, Search } from "lucide-react";
+import { Ruler } from "lucide-react";
+import { toast } from "sonner";
 import L from "leaflet";
 
 interface MapPickerProps {
@@ -24,6 +24,9 @@ interface MapPickerProps {
 
 const defaultCenter = { lat: -8.65, lng: 115.216667 };
 
+/**
+ * Komponen marker untuk menangkap event klik pada peta.
+ */
 function LocationMarker({
   setLatitude,
   setLongitude,
@@ -42,6 +45,7 @@ function LocationMarker({
       setLatitude(lat);
       setLongitude(lng);
       onSelectLocation(lat, lng, 100);
+      toast.success("Lokasi dipilih dari peta.");
     },
   });
 
@@ -62,11 +66,14 @@ export function MapPicker({
     initialLongitude ?? defaultCenter.lng
   );
   const [radius, setRadius] = React.useState(initialRadius ?? 100);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [isSearching, setIsSearching] = React.useState(false);
-
   const mapRef = React.useRef<L.Map | null>(null);
 
+  // Debounce agar tidak terjadi banyak update saat mengetik radius
+  const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  /**
+   * Mengambil lokasi pengguna saat komponen pertama kali dimuat.
+   */
   React.useEffect(() => {
     if (
       !initialLatitude &&
@@ -82,12 +89,16 @@ export function MapPicker({
           setLongitude(lng);
           onSelectLocation(lat, lng, radius);
 
+          // Pusatkan peta ke lokasi pengguna
           if (mapRef.current) {
             mapRef.current.setView([lat, lng], 16);
           }
+
+          toast.success("Lokasi pengguna berhasil ditemukan.");
         },
         (err) => {
-          console.warn("Gagal ambil lokasi pengguna:", err);
+          console.warn("Gagal mengambil lokasi pengguna:", err);
+          toast.error("Tidak dapat mendeteksi lokasi perangkat.");
           onSelectLocation(latitude, longitude, radius);
         }
       );
@@ -97,69 +108,25 @@ export function MapPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery
-        )}`
-      );
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
-        setLatitude(lat);
-        setLongitude(lng);
-        onSelectLocation(lat, lng, radius);
-
-        if (mapRef.current) {
-          mapRef.current.setView([lat, lng], 16);
-        }
-      } else {
-        alert("Lokasi tidak ditemukan.");
-      }
-    } catch (err) {
-      console.error("Error mencari lokasi:", err);
-      alert("Terjadi kesalahan saat mencari lokasi.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  /**
+   * Mengupdate lokasi secara realtime ketika user mengubah nilai latitude/longitude secara manual.
+   * Bisa dikembangkan untuk text input lokasi.
+   */
+  React.useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSelectLocation(latitude, longitude, radius);
+    }, 400);
+  }, [latitude, longitude, radius, onSelectLocation]);
 
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white rounded-xl shadow-lg">
       <CardContent className="p-4 space-y-4">
-        <div className="space-y-3">
-          <p className="text-sm text-gray-300 font-medium">{label}</p>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Cari lokasi (misal: Sekolah SDN 1 Denpasar)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-400 rounded-xl h-10"
-            />
-            <Button
-              type="button"
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 h-10"
-            >
-              <Search className="w-4 h-4" />
-              {isSearching ? "Mencari..." : "Cari"}
-            </Button>
-          </div>
-        </div>
-
-        {/* 🗺️ Map Area */}
         <div className="h-[300px] rounded-lg overflow-hidden relative z-0">
           <MapContainer
             center={[latitude, longitude]}
-            zoom={13}
-            scrollWheelZoom={true}
+            zoom={14}
+            scrollWheelZoom
             className="h-full w-full z-0"
             ref={(ref) => {
               if (ref) mapRef.current = ref;
@@ -201,7 +168,9 @@ export function MapPicker({
             onChange={(e) => {
               const r = Number(e.target.value);
               setRadius(r);
-              onSelectLocation(latitude, longitude, r);
+              if (mapRef.current) {
+                mapRef.current.setView([latitude, longitude]);
+              }
             }}
             className="w-24 text-black"
           />
