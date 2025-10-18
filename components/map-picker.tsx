@@ -8,30 +8,28 @@ import {
   Circle,
   useMapEvents,
 } from "react-leaflet";
+import L from "leaflet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Ruler } from "lucide-react";
+import { Ruler, Search, LocateFixed } from "lucide-react";
 import { toast } from "sonner";
-import L from "leaflet";
 
 interface MapPickerProps {
   onSelectLocation: (lat: number, lng: number, radius: number) => void;
-  initialLatitude?: number;
-  initialLongitude?: number;
   initialRadius?: number;
+  label?: string;
 }
 
-const defaultCenter = { lat: -8.65, lng: 115.216667 }; // Bali default
+const fallbackCenter = { lat: -6.1754, lng: 106.8272 }; // fallback Jakarta
 
+// === Marker Klik Lokasi di Map ===
 function LocationMarker({
   setLatitude,
   setLongitude,
-  setRadius,
   onSelectLocation,
 }: {
   setLatitude: (lat: number) => void;
   setLongitude: (lng: number) => void;
-  setRadius: (r: number) => void;
   onSelectLocation: (lat: number, lng: number, r: number) => void;
 }) {
   useMapEvents({
@@ -41,7 +39,6 @@ function LocationMarker({
       setLatitude(lat);
       setLongitude(lng);
       onSelectLocation(lat, lng, 100);
-      toast.success("Lokasi dipilih dari peta");
     },
   });
   return null;
@@ -49,26 +46,20 @@ function LocationMarker({
 
 export function MapPicker({
   onSelectLocation,
-  initialLatitude,
-  initialLongitude,
-  initialRadius,
+  initialRadius = 100,
+  label = "Pilih Lokasi di Peta",
 }: MapPickerProps) {
-  const [latitude, setLatitude] = React.useState(
-    initialLatitude ?? defaultCenter.lat
-  );
-  const [longitude, setLongitude] = React.useState(
-    initialLongitude ?? defaultCenter.lng
-  );
-  const [radius, setRadius] = React.useState(initialRadius ?? 100);
-  const [search, setSearch] = React.useState("");
+  const [latitude, setLatitude] = React.useState<number | null>(null);
+  const [longitude, setLongitude] = React.useState<number | null>(null);
+  const [radius, setRadius] = React.useState(initialRadius);
+  const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
-
+  const [isSearching, setIsSearching] = React.useState(false);
   const mapRef = React.useRef<L.Map | null>(null);
 
-  // === Ambil lokasi pengguna saat mount ===
+  // === Ambil lokasi perangkat secara langsung ===
   React.useEffect(() => {
-    if (typeof window !== "undefined" && navigator.geolocation) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = pos.coords.latitude;
@@ -76,102 +67,138 @@ export function MapPicker({
           setLatitude(lat);
           setLongitude(lng);
           onSelectLocation(lat, lng, radius);
-          if (mapRef.current) mapRef.current.setView([lat, lng], 16);
+          mapRef.current?.setView([lat, lng], 16);
           toast.success("Lokasi perangkat ditemukan");
         },
-        () => {
-          toast.error("Tidak dapat mengakses lokasi perangkat");
-          onSelectLocation(latitude, longitude, radius);
+        (err) => {
+          console.warn("Gagal ambil lokasi perangkat:", err);
+          toast.error(
+            "Gagal mengambil lokasi perangkat, gunakan lokasi default"
+          );
+          setLatitude(fallbackCenter.lat);
+          setLongitude(fallbackCenter.lng);
+          onSelectLocation(fallbackCenter.lat, fallbackCenter.lng, radius);
         }
       );
     } else {
-      onSelectLocation(latitude, longitude, radius);
+      toast.error("Geolocation tidak didukung perangkat");
+      setLatitude(fallbackCenter.lat);
+      setLongitude(fallbackCenter.lng);
+      onSelectLocation(fallbackCenter.lat, fallbackCenter.lng, radius);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // === Search lokasi pakai OpenStreetMap (Nominatim) ===
+  // === Search lokasi (pakai OpenStreetMap Nominatim) ===
   React.useEffect(() => {
-    if (!search.trim()) {
+    if (query.trim().length < 3) {
       setResults([]);
       return;
     }
 
-    const delayDebounce = setTimeout(async () => {
+    const timeout = setTimeout(async () => {
       try {
-        setLoading(true);
+        setIsSearching(true);
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            search
-          )}&addressdetails=1&limit=5`,
-          {
-            headers: {
-              "User-Agent": "YourAppName/1.0 (contact@yourdomain.com)",
-            },
-          }
+            query
+          )}`
         );
         const data = await res.json();
-        setResults(data || []);
-      } catch {
-        toast.error("Gagal mencari lokasi");
+        setResults(data);
+      } catch (err) {
+        console.error("Gagal mencari lokasi:", err);
+        toast.error("Gagal mencari lokasi, coba lagi.");
       } finally {
-        setLoading(false);
+        setIsSearching(false);
       }
-    }, 600);
+    }, 600); // debounce 600ms
 
-    return () => clearTimeout(delayDebounce);
-  }, [search]);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  const handleSelectPlace = (place: any) => {
-    const lat = parseFloat(place.lat);
-    const lng = parseFloat(place.lon);
+  // === Pilih lokasi dari hasil search ===
+  const handleSelectResult = (r: any) => {
+    const lat = parseFloat(r.lat);
+    const lon = parseFloat(r.lon);
     setLatitude(lat);
-    setLongitude(lng);
+    setLongitude(lon);
+    onSelectLocation(lat, lon, radius);
+    mapRef.current?.setView([lat, lon], 16);
     setResults([]);
-    setSearch(place.display_name);
-    onSelectLocation(lat, lng, radius);
-    if (mapRef.current) mapRef.current.setView([lat, lng], 16);
-    toast.success(`Lokasi dipilih: ${place.display_name}`);
+    setQuery(r.display_name);
   };
+
+  // === Refresh lokasi perangkat ===
+  const handleRefreshLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setLatitude(lat);
+          setLongitude(lng);
+          onSelectLocation(lat, lng, radius);
+          mapRef.current?.setView([lat, lng], 16);
+          toast.success("Lokasi perangkat diperbarui");
+        },
+        () => toast.error("Gagal memperbarui lokasi perangkat")
+      );
+    }
+  };
+
+  if (latitude === null || longitude === null) {
+    return (
+      <Card className="bg-gray-800/60 border-gray-700 text-white rounded-xl shadow-lg p-6 text-center">
+        <p>Mendeteksi lokasi perangkat...</p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-gray-800/60 border-gray-700 text-white rounded-xl shadow-lg">
       <CardContent className="p-4 space-y-4">
-        {/* Input Search */}
+        {/* === Search Input === */}
         <div className="relative">
-          <Input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama tempat (contoh: SD Negeri 7 Batubulan)"
-            className="text-black w-full"
-          />
-          {loading && (
-            <p className="absolute right-3 top-2 text-xs text-gray-400">
-              Mencari...
-            </p>
-          )}
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Cari lokasi (contoh: SD N 7 Batubulan)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 text-black"
+            />
+            <button
+              onClick={handleRefreshLocation}
+              title="Perbarui lokasi perangkat"
+              className="p-2 rounded-lg hover:bg-gray-700 transition"
+            >
+              <LocateFixed className="w-4 h-4 text-blue-400" />
+            </button>
+          </div>
+
+          {/* Dropdown hasil pencarian */}
           {results.length > 0 && (
-            <ul className="absolute z-10 bg-white text-black mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-auto">
-              {results.map((place) => (
+            <ul className="absolute z-50 mt-2 w-full bg-white text-black rounded-lg shadow-md max-h-48 overflow-auto">
+              {results.map((r, i) => (
                 <li
-                  key={place.place_id}
-                  onClick={() => handleSelectPlace(place)}
-                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  key={i}
+                  className="p-2 hover:bg-gray-200 cursor-pointer text-sm"
+                  onClick={() => handleSelectResult(r)}
                 >
-                  {place.display_name}
+                  {r.display_name}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {/* Peta */}
+        {/* === Peta === */}
         <div className="h-[300px] rounded-lg overflow-hidden relative z-0">
           <MapContainer
             center={[latitude, longitude]}
-            zoom={13}
-            scrollWheelZoom={true}
+            zoom={16}
+            scrollWheelZoom
             className="h-full w-full z-0"
             ref={(ref) => {
               if (ref) mapRef.current = ref;
@@ -184,7 +211,6 @@ export function MapPicker({
             <LocationMarker
               setLatitude={setLatitude}
               setLongitude={setLongitude}
-              setRadius={setRadius}
               onSelectLocation={onSelectLocation}
             />
             <Marker
@@ -203,13 +229,13 @@ export function MapPicker({
           </MapContainer>
         </div>
 
-        {/* Input Radius */}
+        {/* === Radius === */}
         <div className="flex items-center gap-4 text-sm text-gray-300">
           <span>Radius:</span>
           <Input
             type="number"
             min={10}
-            max={2000}
+            max={1000}
             value={radius}
             onChange={(e) => {
               const r = Number(e.target.value);
