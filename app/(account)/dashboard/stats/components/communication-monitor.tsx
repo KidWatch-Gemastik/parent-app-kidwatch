@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { MessageSquare, User, Bot, FileText, ImageIcon, Video, Download, Clock } from "lucide-react"
 import dynamic from "next/dynamic";
 
-const DynamicMapPicker = dynamic(() => import("@/components/map-picker").then(mod => mod.MapPicker), {
+const DynamicMapPicker = dynamic(() => import("@/components/map-picker-ui").then(mod => mod.MapPicker), {
     ssr: false,
 });
 
