@@ -40,6 +40,9 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
     const [searchQuery, setSearchQuery] = useState("")
     const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
     const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
+    const [preview, setPreview] = useState<{ open: boolean; url: string | null; name: string | null }>({
+        open: false, url: null, name: null
+    });
 
     const highlightText = (text: string, query: string) => {
         if (!query) return text
@@ -377,29 +380,14 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                                             <>
 
                                                 <Image
-                                                    src={msg.file_url || "/placeholder.svg"}
+                                                    src={msg.file_url!}
                                                     alt={msg.file_name || "image"}
                                                     width={isMobile ? 120 : 150}
                                                     height={isMobile ? 120 : 150}
                                                     unoptimized
                                                     className="rounded-lg cursor-pointer hover:opacity-80 transition"
-                                                    onClick={() => setImageOpen(true)}
+                                                    onClick={() => setPreview({ open: true, url: msg.file_url!, name: msg.file_name || "image" })}
                                                 />
-
-                                                {/* Preview Modal */}
-                                                <Dialog open={imageOpen} onOpenChange={setImageOpen}>
-                                                    <DialogTitle className="hidden">{msg.file_name || "image"}</DialogTitle>
-                                                    <DialogContent className="max-w-4xl p-2 bg-black/90 border-0">
-                                                        <Image
-                                                            src={msg.file_url || "/placeholder.svg"}
-                                                            alt={msg.file_name || "image"}
-                                                            width={800}
-                                                            height={800}
-                                                            unoptimized
-                                                            className="rounded-lg w-full h-auto"
-                                                        />
-                                                    </DialogContent>
-                                                </Dialog>
                                             </>
                                         ) : msg.file_type === "video" ? (
                                             <video
@@ -429,6 +417,23 @@ export default function ChatWindow({ childId, childName, avatarUrl, isOnline, on
                         ))}
                 </div>
             </ScrollArea>
+
+            <Dialog open={preview.open} onOpenChange={(o) => setPreview(p => ({ ...p, open: o }))}>
+                <DialogTitle className="hidden">{preview.name || "image"}</DialogTitle>
+                <DialogContent className="max-w-4xl p-2 bg-black/90 border-0">
+                    {preview.url && (
+                        <Image
+                            src={preview.url}
+                            alt={preview.name || "image"}
+                            width={800}
+                            height={800}
+                            unoptimized
+                            className="rounded-lg w-full h-auto"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
 
             {/* Action Menu */}
             {showActions && (
